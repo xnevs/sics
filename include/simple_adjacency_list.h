@@ -1,5 +1,5 @@
-#ifndef SIMPLE_ADJACENCY_LIST_H_
-#define SIMPLE_ADJACENCY_LIST_H_
+#ifndef GMCS_SIMPLE_ADJACENCY_LIST_H_
+#define GMCS_SIMPLE_ADJACENCY_LIST_H_
 
 #include <vector>
 
@@ -59,4 +59,4 @@ class simple_adjacency_list {
   } 
 };
 
-#endif  // SIMPLE_ADJACENCY_LIST_H_
+#endif  // GMCS_SIMPLE_ADJACENCY_LIST_H_

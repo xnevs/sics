@@ -1,5 +1,5 @@
-#ifndef ADJACENCY_LISTMAT_H_
-#define ADJACENCY_LISTMAT_H_
+#ifndef GMCS_ADJACENCY_LISTMAT_H_
+#define GMCS_ADJACENCY_LISTMAT_H_
 
 #include <vector>
 
@@ -74,4 +74,4 @@ class adjacency_listmat {
   }
 };
 
-#endif  // ADJACENCY_LISTMAT_H_
+#endif  // GMCS_ADJACENCY_LISTMAT_H_
