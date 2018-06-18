@@ -89,7 +89,7 @@ void backtracking_degreeprune_adjacentconsistency_forwardcount_ind(
       } else {
         auto x = *x_it;
         bool proceed = true;
-        for (IndexH y=0; y<n && proceed; ++y) {
+        for (IndexH y=0; y<n; ++y) {
           if (inv[y] == m &&
               vertex_equiv(x, y) &&
               g_out_count[x] == h_out_count[y] &&
@@ -106,6 +106,9 @@ void backtracking_degreeprune_adjacentconsistency_forwardcount_ind(
             revert_h_count(y);
             inv[y] = m;
             map[x] = n;
+            if (!proceed) {
+              break;
+            }
           }
         }
         return proceed;

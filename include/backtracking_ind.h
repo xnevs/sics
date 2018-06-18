@@ -67,7 +67,7 @@ void backtracking_ind(
       } else {
         auto x = *x_it;
         bool proceed = true;
-        for (IndexH y=0; y<n && proceed; ++y) {
+        for (IndexH y=0; y<n; ++y) {
           if (inv[y] == m &&             // uniqueness
               vertex_equiv(x, y) &&      // label
               topology_consistency(y)) { // topology
@@ -78,6 +78,9 @@ void backtracking_ind(
             --x_it;
             inv[y] = m;
             map[x] = n;
+            if (!proceed) {
+              break;
+            }
           }
         }
         return proceed;
