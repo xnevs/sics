@@ -34,7 +34,6 @@ void backtracking_parent_ind(
     IndexOrderG const & index_order_g;
     Callback callback;
     
-  
     IndexG m;
     IndexH n;
     
@@ -46,8 +45,25 @@ void backtracking_parent_ind(
     typename H::adjacent_vertices_container_type h_vertices;
     using adjacent_vertices_range_type = boost::iterator_range<typename H::adjacent_vertices_container_type::const_iterator>;
     adjacent_vertices_range_type h_vertices_range;
-    
     std::vector<std::pair<IndexG, bool>> parents;
+    void build_parents() {
+      std::vector<bool> done(m, false);
+      auto end = std::prev(std::cend(index_order_g));
+      for (auto it=std::cbegin(index_order_g); it!=end; ++it) {
+        auto u = *it;
+        done[u] = true;
+        for (auto i : g.adjacent_vertices(u)) {
+          if (parents[i].first == m && !done[i]) {
+            parents[i] = {u, true};
+          }
+        }
+        for (auto i : g.inv_adjacent_vertices(u)) {
+          if (parents[i].first == m && !done[i]) {
+            parents[i] = {u, false};
+          }
+        }
+      }
+    }
     
     explorer(
         G const & g,
@@ -71,27 +87,8 @@ void backtracking_parent_ind(
           h_vertices(n),
           h_vertices_range(std::cbegin(h_vertices), std::cend(h_vertices)),
           parents(m, {m, false}) {
-      
       std::iota(std::begin(h_vertices), std::end(h_vertices), 0);
-      
-      std::vector<IndexG> index_pos_g(m);
-      for (IndexG i=0; i<m; ++i) {
-        index_pos_g[index_order_g[i]] = i;
-      }
-      
-      for (auto it=std::next(std::cbegin(index_order_g)); it!=std::cend(index_order_g); ++it) {
-        auto u = *it;
-        for (auto i : g.adjacent_vertices(u)) {
-          if (index_pos_g[i] < index_pos_g[u]) {
-            parents[u] = {i, false};
-          }
-        }
-        for (auto i : g.inv_adjacent_vertices(u)) {
-          if (index_pos_g[i] < index_pos_g[u]) {
-            parents[u] = {i, true};
-          }
-        }
-      }
+      build_parents();
     }
     
     bool explore() {
@@ -100,10 +97,8 @@ void backtracking_parent_ind(
       } else {
         auto x = *x_it;
         
-        auto candidates = get_candidates(x);
-        
         bool proceed = true;
-        for (auto y : candidates) {
+        for (auto y : get_candidates(x)) {
           if (inv[y] == m &&             // uniqueness
               vertex_equiv(x, y) &&      // label
               topology_consistency(y)) { // topology
@@ -120,6 +115,21 @@ void backtracking_parent_ind(
           }
         }
         return proceed;
+      }
+    }
+    
+    adjacent_vertices_range_type get_candidates(IndexG u) {
+      IndexG parent;
+      bool out;
+      std::tie(parent, out) = parents[u];
+      if (parent != m) {
+        if (out) {
+          return h.adjacent_vertices(map[parent]);
+        } else {
+          return h.inv_adjacent_vertices(map[parent]);
+        }
+      } else {
+        return h_vertices_range;
       }
     }
     
@@ -146,21 +156,6 @@ void backtracking_parent_ind(
         }
       }
       return true;
-    }
-    
-    adjacent_vertices_range_type get_candidates(IndexG u) {
-      IndexG parent;
-      bool out;
-      std::tie(parent, out) = parents[u];
-      if (parent != m) {
-        if (out) {
-          return h.adjacent_vertices(map[parent]);
-        } else {
-          return h.inv_adjacent_vertices(map[parent]);
-        }
-      } else {
-        return h_vertices_range;
-      }
     }
   } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
   

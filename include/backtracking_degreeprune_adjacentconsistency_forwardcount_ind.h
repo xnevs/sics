@@ -44,6 +44,22 @@ void backtracking_degreeprune_adjacentconsistency_forwardcount_ind(
     std::vector<IndexG> g_in_count;
     std::vector<IndexH> h_out_count;
     std::vector<IndexH> h_in_count;
+    void build_g_count() {
+      std::vector<IndexG> index_pos_g(m);
+      for (IndexG i=0; i<m; ++i) {
+        index_pos_g[index_order_g[i]] = i;
+      }
+      for (IndexG u=0; u<m; ++u) {
+        for (auto i : g.adjacent_vertices(u)) {
+          if (index_pos_g[u] < index_pos_g[i]) {
+            ++g_in_count[i];
+          } else {
+            ++g_out_count[u];
+          }
+        }
+      }
+    }
+
     
     explorer(
         G const & g,
@@ -68,19 +84,7 @@ void backtracking_degreeprune_adjacentconsistency_forwardcount_ind(
           g_in_count(m, 0),
           h_out_count(n, 0),
           h_in_count(n, 0) {
-      std::vector<IndexG> index_pos_g(m);
-      for (IndexG i=0; i<m; ++i) {
-        index_pos_g[index_order_g[i]] = i;
-      }
-      for (IndexG u=0; u<m; ++u) {
-        for (auto i : g.adjacent_vertices(u)) {
-          if (index_pos_g[u] < index_pos_g[i]) {
-            ++g_in_count[i];
-          } else {
-            ++g_out_count[u];
-          }
-        }
-      }
+      build_g_count();
     }
     
     bool explore() {
