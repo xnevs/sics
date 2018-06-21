@@ -1,5 +1,5 @@
-#ifndef GMCS_BACKTRACKING_ADJACENTCONSISTENCY_BACKWARDCOUNT_IND_H_
-#define GMCS_BACKTRACKING_ADJACENTCONSISTENCY_BACKWARDCOUNT_IND_H_
+#ifndef GMCS_BACKTRACKING_FORWARDCOUNT_IND_H_
+#define GMCS_BACKTRACKING_FORWARDCOUNT_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -11,7 +11,7 @@ template <
     typename EdgeEquiv,
     typename IndexOrderG,
     typename Callback>
-void backtracking_adjacentconsistency_backwardcount_ind(
+void backtracking_forwardcount_ind(
     G const & g,
     H const & h,
     VertexEquiv const & vertex_equiv,
@@ -38,7 +38,26 @@ void backtracking_adjacentconsistency_backwardcount_ind(
     typename IndexOrderG::const_iterator x_it;
 
     std::vector<IndexH> map;
-    std::vector<IndexG> inv;
+    
+    std::vector<IndexG> g_out_count;
+    std::vector<IndexG> g_in_count;
+    std::vector<IndexH> h_out_count;
+    std::vector<IndexH> h_in_count;
+    void build_g_count() {
+      std::vector<IndexG> index_pos_g(m);
+      for (IndexG i=0; i<m; ++i) {
+        index_pos_g[index_order_g[i]] = i;
+      }
+      for (IndexG u=0; u<m; ++u) {
+        for (auto i : g.adjacent_vertices(u)) {
+          if (index_pos_g[u] < index_pos_g[i]) {
+            ++g_in_count[i];
+          } else {
+            ++g_out_count[u];
+          }
+        }
+      }
+    }
     
     explorer(
         G const & g,
@@ -58,7 +77,11 @@ void backtracking_adjacentconsistency_backwardcount_ind(
           n{h.num_vertices()},
           x_it(std::cbegin(index_order_g)),
           map(m, n),
-          inv(n, m) {
+          g_out_count(m, 0),
+          g_in_count(m, 0),
+          h_out_count(n, 0),
+          h_in_count(n, 0) {
+      build_g_count();
     }
     
     bool explore() {
@@ -69,14 +92,15 @@ void backtracking_adjacentconsistency_backwardcount_ind(
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
           if (vertex_equiv(x, y) &&
-              inv[y] == m &&
-              topology_consistency(x, y)) {
+              g_out_count[x] == h_out_count[y] &&
+              g_in_count[x] == h_in_count[y] &&
+              consistency(y)) {
             map[x] = y;
-            inv[y] = x;
+            update_h_count(y);
             ++x_it;
             proceed = explore();
             --x_it;
-            inv[y] = m;
+            revert_h_count(y);
             map[x] = n;
             if (!proceed) {
               break;
@@ -87,47 +111,52 @@ void backtracking_adjacentconsistency_backwardcount_ind(
       }
     }
     
-    bool topology_consistency(IndexG u, IndexH v) {
-      IndexG u_out_count = 0;
-      for (auto i : g.adjacent_vertices(u)) {
-        auto j = map[i];
-        if (j != n) {
-          if (!h.edge(v, j) || !edge_equiv(u, i, v, j)) {
-            return false;
-          }
-          ++u_out_count;
+    bool consistency(IndexH y) {
+      auto x = *x_it;
+      for (auto it=std::cbegin(index_order_g); it!=x_it; ++it) {
+        auto u = *it;
+        auto v = map[u];
+        if (v == y) {
+          return false;
+        }
+        auto x_out = g.edge(x, u);
+        if (x_out != h.edge(y, v)) {
+          return false;
+        }
+        auto x_in = g.edge(u, x);
+        if (x_in != h.edge(v, y)) {
+          return false;
+        }
+        if (x_out && !edge_equiv(x, u, y, v)) {
+          return false;
+        }
+        if (x_in && !edge_equiv(u, x, v, y)) {
+          return false;
         }
       }
-      IndexG u_in_count = 0;
-      for (auto i : g.inv_adjacent_vertices(u)) {
-        auto j = map[i];
-        if (j != n) {
-          if (!h.edge(j, v) || !edge_equiv(i, u, j, v)) {
-            return false;
-          }
-          ++u_in_count;
-        }
-      }
-      IndexH v_out_count = 0;
+      return true;
+    }
+    
+    void update_h_count(IndexH v) {
       for (auto j : h.adjacent_vertices(v)) {
-        if (inv[j] != m) {
-          ++v_out_count;
-        }
+        ++h_in_count[j];
       }
-      if (u_out_count != v_out_count) {
-        return false;
-      }
-      IndexH v_in_count = 0;
       for (auto j : h.inv_adjacent_vertices(v)) {
-        if (inv[j] != m) {
-          ++v_in_count;
-        }
+        ++h_out_count[j];
       }
-      return u_in_count == v_in_count;
+    }
+    
+    void revert_h_count(IndexH v) {
+      for (auto j : h.adjacent_vertices(v)) {
+        --h_in_count[j];
+      }
+      for (auto j : h.inv_adjacent_vertices(v)) {
+        --h_out_count[j];
+      }
     }
   } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
   
   e.explore();
 }
 
-#endif  // GMCS_BACKTRACKING_ADJACENTCONSISTENCY_BACKWARDCOUNT_IND_H_
+#endif  // GMCS_BACKTRACKING_FORWARDCOUNT_IND_H_

@@ -94,8 +94,8 @@ void backtracking_degreeprune_adjacentconsistency_forwardcount_ind(
         auto x = *x_it;
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
-          if (inv[y] == m &&
-              vertex_equiv(x, y) &&
+          if (vertex_equiv(x, y) &&
+              inv[y] == m &&
               g_out_count[x] == h_out_count[y] &&
               g_in_count[x] == h_in_count[y] &&
               g.out_degree(x) <= h.out_degree(y) &&

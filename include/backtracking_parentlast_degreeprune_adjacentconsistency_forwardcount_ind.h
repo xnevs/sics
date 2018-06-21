@@ -1,5 +1,5 @@
-#ifndef GMCS_BACKTRACKING_PARENT_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
-#define GMCS_BACKTRACKING_PARENT_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#ifndef GMCS_BACKTRACKING_PARENTLAST_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#define GMCS_BACKTRACKING_PARENTLAST_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -11,7 +11,7 @@ template <
     typename EdgeEquiv,
     typename IndexOrderG,
     typename Callback>
-void backtracking_parent_degreeprune_adjacentconsistency_forwardcount_ind(
+void backtracking_parentlast_degreeprune_adjacentconsistency_forwardcount_ind(
     G const & g,
     H const & h,
     VertexEquiv const & vertex_equiv,
@@ -51,12 +51,12 @@ void backtracking_parent_degreeprune_adjacentconsistency_forwardcount_ind(
         auto u = *it;
         done[u] = true;
         for (auto i : g.adjacent_vertices(u)) {
-          if (parents[i].first == m && !done[i]) {
+          if (!done[i]) {
             parents[i] = {u, true};
           }
         }
         for (auto i : g.inv_adjacent_vertices(u)) {
-          if (parents[i].first == m && !done[i]) {
+          if (!done[i]) {
             parents[i] = {u, false};
           }
         }
@@ -203,4 +203,4 @@ void backtracking_parent_degreeprune_adjacentconsistency_forwardcount_ind(
   e.explore();
 }
 
-#endif  // GMCS_BACKTRACKING_PARENT_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#endif  // GMCS_BACKTRACKING_PARENTLAST_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_

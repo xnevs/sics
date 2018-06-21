@@ -38,7 +38,6 @@ void backtracking_degreeprune_ind(
     typename IndexOrderG::const_iterator x_it;
 
     std::vector<IndexH> map;
-    std::vector<IndexG> inv;
     
     explorer(
         G const & g,
@@ -57,8 +56,7 @@ void backtracking_degreeprune_ind(
           m{g.num_vertices()},
           n{h.num_vertices()},
           x_it(std::cbegin(index_order_g)),
-          map(m, n),
-          inv(n, m) {
+          map(m, n) {
     }
     
     bool explore() {
@@ -68,17 +66,14 @@ void backtracking_degreeprune_ind(
         auto x = *x_it;
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
-          if (inv[y] == m &&             // uniqueness
-              vertex_equiv(x, y) &&      // label
+          if (vertex_equiv(x, y) &&
               g.out_degree(x) <= h.out_degree(y) &&
               g.in_degree(x) <= h.in_degree(y) &&
-              topology_consistency(y)) { // topology
+              consistency(y)) {
             map[x] = y;
-            inv[y] = x;
             ++x_it;
             proceed = explore();
             --x_it;
-            inv[y] = m;
             map[x] = n;
             if (!proceed) {
               break;
@@ -89,26 +84,27 @@ void backtracking_degreeprune_ind(
       }
     }
     
-    bool topology_consistency(IndexH y) {
+    bool consistency(IndexH y) {
       auto x = *x_it;
       for (auto it=std::cbegin(index_order_g); it!=x_it; ++it) {
         auto u = *it;
         auto v = map[u];
-        if (v != n) {
-          auto x_out = g.edge(x, u);
-          if (x_out != h.edge(y, v)) {
-            return false;
-          }
-          auto x_in = g.edge(u, x);
-          if (x_in != h.edge(v, y)) {
-            return false;
-          }
-          if (x_out && !edge_equiv(x, u, y, v)) {
-            return false;
-          }
-          if (x_in && !edge_equiv(u, x, v, y)) {
-            return false;
-          }
+        if (v == y) {
+          return false;
+        }
+        auto x_out = g.edge(x, u);
+        if (x_out != h.edge(y, v)) {
+          return false;
+        }
+        auto x_in = g.edge(u, x);
+        if (x_in != h.edge(v, y)) {
+          return false;
+        }
+        if (x_out && !edge_equiv(x, u, y, v)) {
+          return false;
+        }
+        if (x_in && !edge_equiv(u, x, v, y)) {
+          return false;
         }
       }
       return true;

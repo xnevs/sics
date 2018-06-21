@@ -68,8 +68,8 @@ void backtracking_adjacentconsistency_ind(
         auto x = *x_it;
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
-          if (inv[y] == m &&
-              vertex_equiv(x, y) &&
+          if (vertex_equiv(x, y) &&
+              inv[y] == m &&
               topology_consistency(x, y)) {
             map[x] = y;
             inv[y] = x;

@@ -68,8 +68,8 @@ void backtracking_degreeprune_adjacentconsistency_ind(
         auto x = *x_it;
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
-          if (inv[y] == m &&
-              vertex_equiv(x, y) &&
+          if (vertex_equiv(x, y) &&
+              inv[y] == m &&
               g.out_degree(x) <= h.out_degree(y) &&
               g.in_degree(x) <= h.in_degree(y) &&
               topology_consistency(x, y)) {

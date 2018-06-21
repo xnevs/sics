@@ -40,7 +40,6 @@ void backtracking_parent_ind(
     typename IndexOrderG::const_iterator x_it;
 
     std::vector<IndexH> map;
-    std::vector<IndexG> inv;
     
     typename H::adjacent_vertices_container_type h_vertices;
     using adjacent_vertices_range_type = boost::iterator_range<typename H::adjacent_vertices_container_type::const_iterator>;
@@ -83,7 +82,6 @@ void backtracking_parent_ind(
           n{h.num_vertices()},
           x_it(std::cbegin(index_order_g)),
           map(m, n),
-          inv(n, m),
           h_vertices(n),
           h_vertices_range(std::cbegin(h_vertices), std::cend(h_vertices)),
           parents(m, {m, false}) {
@@ -99,15 +97,12 @@ void backtracking_parent_ind(
         
         bool proceed = true;
         for (auto y : get_candidates(x)) {
-          if (inv[y] == m &&             // uniqueness
-              vertex_equiv(x, y) &&      // label
-              topology_consistency(y)) { // topology
+          if (vertex_equiv(x, y) &&
+              consistency(y)) {
             map[x] = y;
-            inv[y] = x;
             ++x_it;
             proceed = explore();
             --x_it;
-            inv[y] = m;
             map[x] = n;
             if (!proceed) {
               break;
@@ -133,26 +128,27 @@ void backtracking_parent_ind(
       }
     }
     
-    bool topology_consistency(IndexH y) {
+    bool consistency(IndexH y) {
       auto x = *x_it;
       for (auto it=std::cbegin(index_order_g); it!=x_it; ++it) {
         auto u = *it;
         auto v = map[u];
-        if (v != n) {
-          auto x_out = g.edge(x, u);
-          if (x_out != h.edge(y, v)) {
-            return false;
-          }
-          auto x_in = g.edge(u, x);
-          if (x_in != h.edge(v, y)) {
-            return false;
-          }
-          if (x_out && !edge_equiv(x, u, y, v)) {
-            return false;
-          }
-          if (x_in && !edge_equiv(u, x, v, y)) {
-            return false;
-          }
+        if (v == y) {
+          return false;
+        }
+        auto x_out = g.edge(x, u);
+        if (x_out != h.edge(y, v)) {
+          return false;
+        }
+        auto x_in = g.edge(u, x);
+        if (x_in != h.edge(v, y)) {
+          return false;
+        }
+        if (x_out && !edge_equiv(x, u, y, v)) {
+          return false;
+        }
+        if (x_in && !edge_equiv(u, x, v, y)) {
+          return false;
         }
       }
       return true;

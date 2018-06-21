@@ -1,5 +1,5 @@
-#ifndef GMCS_BACKTRACKING_ADJACENTCONSISTENCY_BACKWARDCOUNT_IND_H_
-#define GMCS_BACKTRACKING_ADJACENTCONSISTENCY_BACKWARDCOUNT_IND_H_
+#ifndef GMCS_BACKJUMPING_IND_H_
+#define GMCS_BACKJUMPING_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -11,7 +11,7 @@ template <
     typename EdgeEquiv,
     typename IndexOrderG,
     typename Callback>
-void backtracking_adjacentconsistency_backwardcount_ind(
+void backjumping_ind(
     G const & g,
     H const & h,
     VertexEquiv const & vertex_equiv,
@@ -35,10 +35,11 @@ void backtracking_adjacentconsistency_backwardcount_ind(
     IndexG m;
     IndexH n;
     
-    typename IndexOrderG::const_iterator x_it;
+    using x_it_type = typename IndexOrderG::const_iterator;
+    x_it_type x_it;
+    x_it_type backjump_it;
 
     std::vector<IndexH> map;
-    std::vector<IndexG> inv;
     
     explorer(
         G const & g,
@@ -57,8 +58,8 @@ void backtracking_adjacentconsistency_backwardcount_ind(
           m{g.num_vertices()},
           n{h.num_vertices()},
           x_it(std::cbegin(index_order_g)),
-          map(m, n),
-          inv(n, m) {
+          backjump_it{x_it},
+          map(m, n) {
     }
     
     bool explore() {
@@ -67,67 +68,65 @@ void backtracking_adjacentconsistency_backwardcount_ind(
       } else {
         auto x = *x_it;
         bool proceed = true;
+        backjump_it = std::next(x_it);
+        x_it_type latest_it = std::cbegin(index_order_g);
         for (IndexH y=0; y<n; ++y) {
-          if (vertex_equiv(x, y) &&
-              inv[y] == m &&
-              topology_consistency(x, y)) {
+          x_it_type culprit_it;
+          if (!vertex_equiv(x, y)) {
+            culprit_it = std::cbegin(index_order_g);
+          } else {
+            culprit_it = consistency(y);
+          }
+          if (culprit_it > x_it) {
             map[x] = y;
-            inv[y] = x;
             ++x_it;
             proceed = explore();
             --x_it;
-            inv[y] = m;
             map[x] = n;
-            if (!proceed) {
+            if (!proceed || backjump_it <= x_it) {
               break;
             }
           }
+          if (culprit_it > latest_it) {
+            latest_it = culprit_it;
+          }
+        }
+        if (backjump_it > x_it && latest_it <= x_it) {
+          backjump_it = latest_it;
         }
         return proceed;
       }
     }
     
-    bool topology_consistency(IndexG u, IndexH v) {
-      IndexG u_out_count = 0;
-      for (auto i : g.adjacent_vertices(u)) {
-        auto j = map[i];
-        if (j != n) {
-          if (!h.edge(v, j) || !edge_equiv(u, i, v, j)) {
-            return false;
-          }
-          ++u_out_count;
+    x_it_type consistency(IndexH y) {
+      auto x = *x_it;
+      x_it_type it;
+      for (it=std::cbegin(index_order_g); it!=x_it; ++it) {
+        auto u = *it;
+        auto v = map[u];
+        if (v == y) {
+          break;
+        }
+        auto x_out = g.edge(x, u);
+        if (x_out != h.edge(y, v)) {
+          break;
+        }
+        auto x_in = g.edge(u, x);
+        if (x_in != h.edge(v, y)) {
+          break;
+        }
+        if (x_out && !edge_equiv(x, u, y, v)) {
+          break;
+        }
+        if (x_in && !edge_equiv(u, x, v, y)) {
+          break;
         }
       }
-      IndexG u_in_count = 0;
-      for (auto i : g.inv_adjacent_vertices(u)) {
-        auto j = map[i];
-        if (j != n) {
-          if (!h.edge(j, v) || !edge_equiv(i, u, j, v)) {
-            return false;
-          }
-          ++u_in_count;
-        }
-      }
-      IndexH v_out_count = 0;
-      for (auto j : h.adjacent_vertices(v)) {
-        if (inv[j] != m) {
-          ++v_out_count;
-        }
-      }
-      if (u_out_count != v_out_count) {
-        return false;
-      }
-      IndexH v_in_count = 0;
-      for (auto j : h.inv_adjacent_vertices(v)) {
-        if (inv[j] != m) {
-          ++v_in_count;
-        }
-      }
-      return u_in_count == v_in_count;
+      return std::next(it);
     }
   } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
   
   e.explore();
 }
 
-#endif  // GMCS_BACKTRACKING_ADJACENTCONSISTENCY_BACKWARDCOUNT_IND_H_
+#endif  // GMCS_BACKJUMPING_IND_H_
