@@ -11,7 +11,7 @@
 #include "include/vertex_order.h"
 
 #include "include/backtracking_ind.h"
-#include "include/backjumping_ind.h"
+#include "include/backmarking_ind.h"
 
 int main(int argc, char * argv[]) {
   char const * g_filename = argv[1];
@@ -30,7 +30,7 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
   
   int count = 0;
-  backjumping_ind(
+  backmarking_ind(
       g,
       h,
       [](auto x, auto y) {return true;},
