@@ -1,8 +1,9 @@
-#ifndef GMCS_BACKTRACKING_PARENTLAST_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
-#define GMCS_BACKTRACKING_PARENTLAST_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#ifndef GMCS_LAZYFORWARDCHECKING_PARENT_IND_H_
+#define GMCS_LAZYFORWARDCHECKING_PARENT_IND_H_
 
 #include <iterator>
 #include <vector>
+#include <stack>
 
 template <
     typename G,
@@ -11,7 +12,7 @@ template <
     typename EdgeEquiv,
     typename IndexOrderG,
     typename Callback>
-void backtracking_parentlast_degreeprune_adjacentconsistency_forwardcount_ind(
+void lazyforwardchecking_parent_ind(
     G const & g,
     H const & h,
     VertexEquiv const & vertex_equiv,
@@ -35,10 +36,9 @@ void backtracking_parentlast_degreeprune_adjacentconsistency_forwardcount_ind(
     IndexG m;
     IndexH n;
     
-    typename IndexOrderG::const_iterator x_it;
+    IndexG level;
 
     std::vector<IndexH> map;
-    std::vector<IndexG> inv;
     
     typename H::adjacent_vertices_container_type h_vertices;
     using adjacent_vertices_range_type = boost::iterator_range<typename H::adjacent_vertices_container_type::const_iterator>;
@@ -51,37 +51,38 @@ void backtracking_parentlast_degreeprune_adjacentconsistency_forwardcount_ind(
         auto u = *it;
         done[u] = true;
         for (auto i : g.adjacent_vertices(u)) {
-          if (!done[i]) {
+          if (parents[i].first == m && !done[i]) {
             parents[i] = {u, true};
           }
         }
         for (auto i : g.inv_adjacent_vertices(u)) {
-          if (!done[i]) {
+          if (parents[i].first == m && !done[i]) {
             parents[i] = {u, false};
           }
         }
       }
     }
     
-    std::vector<IndexG> g_out_count;
-    std::vector<IndexG> g_in_count;
-    std::vector<IndexH> h_out_count;
-    std::vector<IndexH> h_in_count;
-    void build_g_count() {
-      std::vector<IndexG> index_pos_g(m);
-      for (IndexG i=0; i<m; ++i) {
-        index_pos_g[index_order_g[i]] = i;
-      }
+    std::vector<char> M;
+    bool M_get(IndexG u, IndexH v) {
+      return M[u*n + v];
+    }
+    void M_set(IndexG u, IndexH v) {
+      M[u*n + v] = true;
+    }
+    void M_unset(IndexG u, IndexH v) {
+      M[u*n + v] = false;
+    }
+    void build_M() {
       for (IndexG u=0; u<m; ++u) {
-        for (auto i : g.adjacent_vertices(u)) {
-          if (index_pos_g[u] < index_pos_g[i]) {
-            ++g_in_count[i];
-          } else {
-            ++g_out_count[u];
+        for (IndexH v=0; v<n; ++v) {
+          if (vertex_equiv(u, v)) {
+            M_set(u, v);
           }
         }
       }
     }
+    std::vector<std::stack<std::pair<IndexG,IndexH>>> M_sts;
     
     explorer(
         G const & g,
@@ -99,44 +100,33 @@ void backtracking_parentlast_degreeprune_adjacentconsistency_forwardcount_ind(
           
           m{g.num_vertices()},
           n{h.num_vertices()},
-          x_it(std::cbegin(index_order_g)),
+          level{0},
           map(m, n),
-          inv(n, m),
           h_vertices(n),
           h_vertices_range(std::cbegin(h_vertices), std::cend(h_vertices)),
           parents(m, {m, false}),
-          g_out_count(m, 0),
-          g_in_count(m, 0),
-          h_out_count(n, 0),
-          h_in_count(n, 0) {
+          M(m * n, false),
+          M_sts(m) {
       std::iota(std::begin(h_vertices), std::end(h_vertices), 0);
       build_parents();
-      build_g_count();
+      build_M();
     }
     
     bool explore() {
-      if (x_it == std::cend(index_order_g)) {
+      if (level == m) {
         return callback();
       } else {
-        auto x = *x_it;
+        auto x = index_order_g[level];
         bool proceed = true;
         for (auto y : get_candidates(x)) {
-          if (vertex_equiv(x, y) &&
-              inv[y] == m &&
-              g_out_count[x] == h_out_count[y] &&
-              g_in_count[x] == h_in_count[y] &&
-              g.out_degree(x) <= h.out_degree(y) &&
-              g.in_degree(x) <= h.in_degree(y) &&
-              topology_consistency(x, y)) {
+          if (M_get(x, y) &&
+              consistency(y)) {
             map[x] = y;
-            inv[y] = x;
-            update_h_count(y);
-            ++x_it;
+            ++level;
             proceed = explore();
-            --x_it;
-            revert_h_count(y);
-            inv[y] = m;
+            --level;
             map[x] = n;
+            revert_M();
             if (!proceed) {
               break;
             }
@@ -161,41 +151,49 @@ void backtracking_parentlast_degreeprune_adjacentconsistency_forwardcount_ind(
       }
     }
     
-    bool topology_consistency(IndexG u, IndexH v) {
-      for (auto i : g.adjacent_vertices(u)) {
-        auto j = map[i];
-        if (j != n) {
-          if (!h.edge(v, j) || !edge_equiv(u, i, v, j)) {
-            return false;
-          }
+    bool consistency(IndexH y) {
+      auto x = index_order_g[level];
+      for (IndexG i=0; i<level; ++i) {
+        auto u = index_order_g[i];
+        auto v = map[u];
+        if (v == y) {
+          M_unset(x, y);
+          M_sts[i].push({x, y});
+          return false;
         }
-      }
-      for (auto i : g.inv_adjacent_vertices(u)) {
-        auto j = map[i];
-        if (j != n) {
-          if (!h.edge(j, v) || !edge_equiv(i, u, j, v)) {
-            return false;
-          }
+        auto x_out = g.edge(x, u);
+        if (x_out != h.edge(y, v)) {
+          M_unset(x, y);
+          M_sts[i].push({x, y});
+          return false;
+        }
+        auto x_in = g.edge(u, x);
+        if (x_in != h.edge(v, y)) {
+          M_unset(x, y);
+          M_sts[i].push({x, y});
+          return false;
+        }
+        if (x_out && !edge_equiv(x, u, y, v)) {
+          M_unset(x, y);
+          M_sts[i].push({x, y});
+          return false;
+        }
+        if (x_in && !edge_equiv(u, x, v, y)) {
+          M_unset(x, y);
+          M_sts[i].push({x, y});
+          return false;
         }
       }
       return true;
     }
     
-    void update_h_count(IndexH v) {
-      for (auto j : h.adjacent_vertices(v)) {
-        ++h_in_count[j];
-      }
-      for (auto j : h.inv_adjacent_vertices(v)) {
-        ++h_out_count[j];
-      }
-    }
-    
-    void revert_h_count(IndexH v) {
-      for (auto j : h.adjacent_vertices(v)) {
-        --h_in_count[j];
-      }
-      for (auto j : h.inv_adjacent_vertices(v)) {
-        --h_out_count[j];
+    void revert_M() {
+      while (!M_sts[level].empty()) {
+        IndexG u;
+        IndexH v;
+        std::tie(u, v) = M_sts[level].top();
+        M_sts[level].pop();
+        M_set(u, v);
       }
     }
   } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
@@ -203,4 +201,4 @@ void backtracking_parentlast_degreeprune_adjacentconsistency_forwardcount_ind(
   e.explore();
 }
 
-#endif  // GMCS_BACKTRACKING_PARENTLAST_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#endif  // GMCS_LAZYFORWARDCHECKING_PARENT_IND_H_

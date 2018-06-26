@@ -1,8 +1,9 @@
-#ifndef GMCS_BACKMARKING_IND_H_
-#define GMCS_BACKMARKING_IND_H_
+#ifndef GMCS_LAZYFORWARDCHECKING_DEGREEPRUNE_IND_H_
+#define GMCS_LAZYFORWARDCHECKING_DEGREEPRUNE_IND_H_
 
 #include <iterator>
 #include <vector>
+#include <stack>
 
 template <
     typename G,
@@ -11,7 +12,7 @@ template <
     typename EdgeEquiv,
     typename IndexOrderG,
     typename Callback>
-void backmarking_ind(
+void lazyforwardchecking_degreeprune_ind(
     G const & g,
     H const & h,
     VertexEquiv const & vertex_equiv,
@@ -39,23 +40,28 @@ void backmarking_ind(
 
     std::vector<IndexH> map;
     
-    std::vector<IndexG> low;
-    std::vector<IndexG> M;
-    IndexG M_get(IndexG u, IndexH v) {
+    std::vector<char> M;
+    bool M_get(IndexG u, IndexH v) {
       return M[u*n + v];
     }
-    void M_set(IndexG u, IndexH v, IndexG level) {
-      M[u*n + v] = level;
+    void M_set(IndexG u, IndexH v) {
+      M[u*n + v] = true;
+    }
+    void M_unset(IndexG u, IndexH v) {
+      M[u*n + v] = false;
     }
     void build_M() {
       for (IndexG u=0; u<m; ++u) {
         for (IndexH v=0; v<n; ++v) {
-          if (!vertex_equiv(u, v)) {
-            M_set(u, v, 0);
+          if (vertex_equiv(u, v) &&
+              g.out_degree(u) <= h.out_degree(v) &&
+              g.in_degree(u) <= h.in_degree(v)) {
+            M_set(u, v);
           }
         }
       }
     }
+    std::vector<std::stack<std::pair<IndexG,IndexH>>> M_sts;
     
     explorer(
         G const & g,
@@ -75,8 +81,8 @@ void backmarking_ind(
           n{h.num_vertices()},
           level{0},
           map(m, n),
-          low(m, 0),
-          M(m * n, m) {
+          M(m * n, false),
+          M_sts(m) {
       build_M();
     }
     
@@ -87,60 +93,71 @@ void backmarking_ind(
         auto x = index_order_g[level];
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
-          if (M_get(x, y) > low[level] &&
+          if (M_get(x, y) &&
               consistency(y)) {
-            for (IndexG i=level+1; i<m && level<low[i]; ++i) {
-              low[i] = level;
-            }
             map[x] = y;
             ++level;
             proceed = explore();
             --level;
             map[x] = n;
+            revert_M();
             if (!proceed) {
               break;
             }
           }
         }
-        low[level] = level;
         return proceed;
       }
     }
     
     bool consistency(IndexH y) {
       auto x = index_order_g[level];
-      for (IndexG i=low[level]; i<level; ++i) {
+      for (IndexG i=0; i<level; ++i) {
         auto u = index_order_g[i];
         auto v = map[u];
         if (v == y) {
-          M_set(x, y, i+1);
+          M_unset(x, y);
+          M_sts[i].push({x, y});
           return false;
         }
         auto x_out = g.edge(x, u);
         if (x_out != h.edge(y, v)) {
-          M_set(x, y, i+1);
+          M_unset(x, y);
+          M_sts[i].push({x, y});
           return false;
         }
         auto x_in = g.edge(u, x);
         if (x_in != h.edge(v, y)) {
-          M_set(x, y, i+1);
+          M_unset(x, y);
+          M_sts[i].push({x, y});
           return false;
         }
         if (x_out && !edge_equiv(x, u, y, v)) {
-          M_set(x, y, i+1);
+          M_unset(x, y);
+          M_sts[i].push({x, y});
           return false;
         }
         if (x_in && !edge_equiv(u, x, v, y)) {
-          M_set(x, y, i+1);
+          M_unset(x, y);
+          M_sts[i].push({x, y});
           return false;
         }
       }
-      M_set(x, y, m);
       return true;
+    }
+    
+    void revert_M() {
+      while (!M_sts[level].empty()) {
+        IndexG u;
+        IndexH v;
+        std::tie(u, v) = M_sts[level].top();
+        M_sts[level].pop();
+        M_set(u, v);
+      }
     }
   } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
   
   e.explore();
 }
 
-#endif  // GMCS_BACKMARKING_IND_H_
+#endif  // GMCS_LAZYFORWARDCHECKING_DEGREEPRUNE_IND_H_

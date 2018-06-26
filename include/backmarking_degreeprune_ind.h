@@ -1,5 +1,5 @@
-#ifndef GMCS_BACKMARKING_IND_H_
-#define GMCS_BACKMARKING_IND_H_
+#ifndef GMCS_BACKMARKING_DEGREEPRUNE_IND_H_
+#define GMCS_BACKMARKING_DEGREEPRUNE_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -11,7 +11,7 @@ template <
     typename EdgeEquiv,
     typename IndexOrderG,
     typename Callback>
-void backmarking_ind(
+void backmarking_degreeprune_ind(
     G const & g,
     H const & h,
     VertexEquiv const & vertex_equiv,
@@ -50,7 +50,9 @@ void backmarking_ind(
     void build_M() {
       for (IndexG u=0; u<m; ++u) {
         for (IndexH v=0; v<n; ++v) {
-          if (!vertex_equiv(u, v)) {
+          if (!vertex_equiv(u, v) ||
+              g.out_degree(u) > h.out_degree(v) ||
+              g.in_degree(u) > h.in_degree(v)) {
             M_set(u, v, 0);
           }
         }
@@ -143,4 +145,4 @@ void backmarking_ind(
   e.explore();
 }
 
-#endif  // GMCS_BACKMARKING_IND_H_
+#endif  // GMCS_BACKMARKING_DEGREEPRUNE_IND_H_
