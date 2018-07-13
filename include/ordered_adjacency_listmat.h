@@ -1,6 +1,10 @@
 #ifndef GMCS_ORDRED_ADJACENCY_LISTMAT_H_
 #define GMCS_ORDRED_ADJACENCY_LISTMAT_H_
 
+/*
+ * OBSOLETE
+ */
+
 #include <vector>
 
 #include <boost/range/iterator_range.hpp>
@@ -9,10 +13,10 @@ template <typename Index>
 class ordered_adjacency_listmat {
  public:
   using index_type = Index;
-  
+
  private:
   index_type n;
- 
+
   struct node {
     std::vector<index_type> out;
     std::vector<index_type> in;
@@ -20,17 +24,17 @@ class ordered_adjacency_listmat {
     typename decltype(in)::const_iterator in_mid;
   };
   std::vector<node> nodes;
-  
+
   std::vector<bool> mat;
-  
+
   void set(index_type i, index_type j) {
     mat[i*n + j] = true;
   }
-  
+
   bool get(index_type i, index_type j) const {
     return mat[i*n + j];
   }
-  
+
  public:
   template <
       typename G,
@@ -67,15 +71,15 @@ class ordered_adjacency_listmat {
           });
     }
   }
-  
+
   index_type num_vertices() const {
     return n;
   }
-  
+
   bool edge(index_type u, index_type v) const {
     return get(u, v);
   }
-  
+
   index_type out_degree_before(index_type u) const {
     return adjacent_vertices_before(u).size();
   }
@@ -85,7 +89,7 @@ class ordered_adjacency_listmat {
   index_type degree_before(index_type u) const {
     return out_degree_before(u) + in_degree_before(u);
   }
-  
+
   index_type out_degree_after(index_type u) const {
     return adjacent_vertices_after(u).size();
   }
@@ -95,7 +99,7 @@ class ordered_adjacency_listmat {
   index_type degree_after(index_type u) const {
     return out_degree_after(u) + in_degree_after(u);
   }
-  
+
   index_type out_degree(index_type u) const {
     return nodes[u].out.size();
   }
@@ -105,37 +109,37 @@ class ordered_adjacency_listmat {
   index_type degree(index_type u) const {
     return out_degree(u) + in_degree(u);
   }
-  
+
   auto adjacent_vertices(index_type u) const {
     return boost::make_iterator_range(
         std::begin(nodes[u].out),
         std::end(nodes[u].out));
   }
-  
+
   auto adjacent_vertices_before(index_type u) const {
     return boost::make_iterator_range(
         std::begin(nodes[u].out),
         nodes[u].out_mid);
   }
-  
+
   auto adjacent_vertices_after(index_type u) const {
     return boost::make_iterator_range(
         nodes[u].out_mid,
         std::end(nodes[u].out));
   }
-  
+
   auto inv_adjacent_vertices(index_type u) const {
     return boost::make_iterator_range(
         std::begin(nodes[u].in),
         std::end(nodes[u].in));
   }
-  
+
   auto inv_adjacent_vertices_before(index_type u) const {
     return boost::make_iterator_range(
         std::begin(nodes[u].in),
         nodes[u].in_mid);
   }
-  
+
   auto inv_adjacent_vertices_after(index_type u) const {
     return boost::make_iterator_range(
         nodes[u].in_mid,
