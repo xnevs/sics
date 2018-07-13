@@ -6,7 +6,7 @@
 #include <boost/range/iterator_range.hpp>
 
 #include "graph_traits.h"
-#include "graph_common.h"
+#include "adjacency_list.h"
 
 template <
     typename Index,

@@ -8,7 +8,26 @@
 #include <boost/range/iterator_range.hpp>
 
 #include "graph_traits.h"
-#include "graph_common.h"
+
+template <typename Index, typename Label=void>
+struct half_edge : public half_edge<Index, void> {
+  Label label;
+
+  half_edge(Index target, Label label)
+      : half_edge<Index, void>::half_edge(target),
+        label{label} {
+  }
+};
+
+template <typename Index>
+struct half_edge<Index, void> {
+  Index target;
+
+  half_edge(Index target)
+      : target{target} {
+  }
+};
+
 
 template <
     typename Index,
