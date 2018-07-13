@@ -100,7 +100,7 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
     }
   }
 
-  bool edge(typename base::index_type u, typename base::index_type v) {
+  bool edge(typename base::index_type u, typename base::index_type v) const {
     if constexpr (std::is_base_of<undirected_tag, typename base::directed_category>::value) {
       if (u <= v) {
         return m_mat[(u * (u+1)) / 2 + v];
