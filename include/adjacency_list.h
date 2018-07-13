@@ -326,7 +326,7 @@ class adjacency_list<Index, directed_tag, void, void> {
 
   template <typename G>
   explicit adjacency_list(G const & g)
-      : m_out_edges(g.num_vertices) {
+      : m_out_edges(g.num_vertices()) {
     auto n = g.num_vertices();
     for (index_type u=0; u<n; ++u) {
       for (auto oe : g.out_edges(u)) {
