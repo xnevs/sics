@@ -34,16 +34,9 @@ template <
     typename DirectedCategory,
     typename VertexLabel = void,
     typename EdgeLabel = void>
-class adjacency_list {
-  template <typename T>
-  struct always_false {
-    static constexpr bool value = false;
-  };
+class adjacency_list;  // only specializations below are valid, so there is no definition here
 
-  static_assert(always_false<void>::value, "Supplied template parameters not supported.");
-};
-
-// TODO implement EdgeLabel
+// TODO implement EdgeLabel != void
 
 // Vertex labels
 

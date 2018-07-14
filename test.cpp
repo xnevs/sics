@@ -3,27 +3,34 @@
 #include <fstream>
 #include <iostream>
 
-#include "include/read_amalfi.h"
-
 #include "include/graph_traits.h"
-#include "include/adjacency_list.h"
 #include "include/adjacency_listmat.h"
+#include "include/vertex_order.h"
+#include "include/backtracking_ind.h"
 
 int main(int argc, char * argv[]) {
-  char const * g_filename = argv[1];
 
-  std::ifstream in{g_filename,std::ios::in|std::ios::binary};
-  auto g_ = read_amalfi<adjacency_listmat<uint16_t, directed_tag>>(in);
-  in.close();
+  adjacency_listmat<uint16_t, undirected_tag> g(3);
+  g.add_edge(0, 1);
+  g.add_edge(1, 2);
+  g.add_edge(2, 1);
+  g.add_edge(2, 0);
+  adjacency_listmat<uint16_t, undirected_tag> h(4);
+  h.add_edge(0, 1);
+  h.add_edge(1, 2);
+  h.add_edge(2, 0);
+  h.add_edge(1, 3);
+  h.add_edge(3, 0);
+  h.add_edge(0, 3);
 
-  adjacency_listmat<decltype(g_)::index_type, bidirectional_tag> g{g_};
+  auto index_order_g = vertex_order_DEG(g);
 
-  std::cout << g.degree(3) << std::endl;
+  int count = 0;
+  backtracking_ind(
+      g,
+      h,
+      [&count]() {++count; return true;},
+      index_order_g);
 
-  for (auto oe : g.out_edges(69)) {
-    std::cout << oe.target << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << g_.edge(3, 69) << " " << g.edge(69, 9) << std::endl;
+  std::cout << count << std::endl;
 }

@@ -1,39 +1,66 @@
-#ifndef READ_MIVIA_LDGRAPHS_H_
-#define READ_MIVIA_LDGRAPHS_H_
-
+#ifndef GMCS_READ_LDGRAPHS_H_
+#define GMCS_READ_LDGRAPHS_H_
 
 #include <cstdint>
 
 #include <istream>
-
-uint16_t read_word(std::istream & in) {
-  uint16_t x = static_cast<unsigned char>(in.get());
-  x |= static_cast<uint16_t>(in.get()) << 8;
-  return x;
-}
+#include <string>
 
 template <typename G>
-G read_ldgraphs(std::istream & in) {
-  uint16_t n;
+G read_ldgraphs_unl(std::istream & in) {
+  using index_type = typename G::index_type;
+
+  index_type n;
   in >> n;
-  
+
   G g(n);
-  
-  uint16_t tmp;
-  for (decltype(n) i=0; i<n; ++i) {
-    in >> tmp >> tmp;
+
+  for (index_type i=0; i<n; ++i) {
+    index_type u;
+    std::string ignore;
+    in >> u >> ignore;
   }
-  
-  for (decltype(n) u=0; u<n; ++u) {
+
+  for (index_type i=0; i<n; ++i) {
     int cnt;
     in >> cnt;
     for (decltype(cnt) j=0; j<cnt; ++j) {
-      decltype(n) v;
-      in >> tmp >> v;
+      index_type u, v;
+      in >> u >> v;
       g.add_edge(u, v);
     }
   }
   return g;
 }
 
-#endif  // READ_MIVIA_LDGRAPHS_H_
+template <
+    typename G,
+    typename VertexLabel = typename G::vertex_label_type>
+G read_ldgraphs_lab(std::istream & in) {
+  using index_type = typename G::index_type;
+
+  index_type n;
+  in >> n;
+
+  G g(n);
+
+  for (index_type i=0; i<n; ++i) {
+    index_type u;
+    VertexLabel label;
+    in >> u >> label;
+    g.set_vertex_label(u, label);
+  }
+
+  for (index_type i=0; i<n; ++i) {
+    int cnt;
+    in >> cnt;
+    for (decltype(cnt) j=0; j<cnt; ++j) {
+      index_type u, v;
+      in >> u >> v;
+      g.add_edge(u, v);
+    }
+  }
+  return g;
+}
+
+#endif  // GMCS_READ_LDGRAPHS_H_

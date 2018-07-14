@@ -5,17 +5,22 @@
 #include <vector>
 
 #include "graph_traits.h"
+#include "label_equivalence.h"
 
 template <
     typename G,
     typename H,
     typename Callback,
-    typename IndexOrderG>
+    typename IndexOrderG,
+    typename VertexEquiv = default_vertex_label_equiv<G, H>,
+    typename EdgeEquiv = default_edge_label_equiv<G, H>>
 void backtracking_ind(
     G const & g,
     H const & h,
     Callback const & callback,
-    IndexOrderG const & index_order_g) {
+    IndexOrderG const & index_order_g,
+    VertexEquiv const & vertex_equiv = VertexEquiv(),
+    EdgeEquiv const & edge_equiv = EdgeEquiv()) {
 
   using IndexG = typename G::index_type;
   using IndexH = typename H::index_type;
@@ -27,6 +32,8 @@ void backtracking_ind(
     IndexOrderG const & index_order_g;
     Callback callback;
 
+    vertex_equiv_helper<VertexEquiv> vertex_equiv;
+    edge_equiv_helper<EdgeEquiv> edge_equiv;
 
     IndexG m;
     IndexH n;
@@ -39,11 +46,15 @@ void backtracking_ind(
         G const & g,
         H const & h,
         IndexOrderG const & index_order_g,
-        Callback const & callback)
+        Callback const & callback,
+        VertexEquiv const & vertex_equiv,
+        EdgeEquiv const & edge_equiv)
         : g{g},
           h{h},
           index_order_g{index_order_g},
           callback{callback},
+          vertex_equiv{vertex_equiv},
+          edge_equiv{edge_equiv},
 
           m{g.num_vertices()},
           n{h.num_vertices()},
@@ -76,11 +87,8 @@ void backtracking_ind(
     bool consistency(IndexH y) {
       auto x = *x_it;
 
-      if constexpr (is_vertex_labelled_v<G>) {
-        // TODO maybe use a vertex_equiv function?
-        if (g.get_vertex_label(x) != h.get_vertex_label(y)) {
-          return false;
-        }
+      if (!vertex_equiv(g, x, h, y)) {
+        return false;
       }
 
       for (auto it=std::cbegin(index_order_g); it!=x_it; ++it) {
@@ -90,17 +98,19 @@ void backtracking_ind(
           return false;
         }
         auto x_out = g.edge(x, u);
-        if (x_out != h.edge(y, v)) { // TODO maybe use an edge_equiv function?
+        if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
           return false;
         }
-        auto x_in = g.edge(u, x);
-        if (x_in != h.edge(v, y)) { // TODO maybe use an edge_equiv function?
-          return false;
+        if constexpr (is_directed_v<G>) {
+          auto x_in = g.edge(u, x);
+          if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
+            return false;
+          }
         }
       }
       return true;
     }
-  } e(g, h, index_order_g, callback);
+  } e(g, h, index_order_g, callback, vertex_equiv, edge_equiv);
 
   e.explore();
 }

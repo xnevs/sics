@@ -13,8 +13,7 @@ template <
     typename DirectedCategory,
     typename VertexLabel = void,
     typename EdgeLabel = void>
-class adjacency_listmat
-    : public adjacency_list<Index, DirectedCategory, VertexLabel, EdgeLabel> {
+class adjacency_listmat : public adjacency_list<Index, DirectedCategory, VertexLabel, EdgeLabel> {
 };
 
 // TODO implement EdgeLabel != void
@@ -44,6 +43,7 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
 
   template <
       typename G,
+      typename std::enable_if_t<!std::is_integral<G>::value, int> = 0,
       typename Temp = typename base::directed_category,  // needed to make enable_if work
       typename std::enable_if_t<std::is_base_of<undirected_tag, Temp>::value, int> = 0>
   explicit adjacency_listmat(G const & g)
@@ -53,7 +53,7 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
     for (typename base::index_type u=0; u<n; ++u) {
       for (auto e : g.edges(u)) {
         auto v = e.target;
-        if (u <= v) {
+        if (u >= v) {
           m_mat[(u * (u+1)) / 2 + v] = true;
         }
         else {
@@ -74,6 +74,7 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
 
   template <
       typename G,
+      typename std::enable_if_t<!std::is_integral<G>::value, int> = 0,
       typename Temp = typename base::directed_category,  // needed to make enable_if work
       typename std::enable_if_t<std::is_base_of<directed_tag, Temp>::value, int> = 0>
   explicit adjacency_listmat(G const & g)
@@ -90,7 +91,7 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
   void add_edge(typename base::index_type u, typename base::index_type v) {
     base::add_edge(u, v);
     if constexpr (std::is_base_of<undirected_tag, typename base::directed_category>::value) {
-      if (u <= v) {
+      if (u >= v) {
         m_mat[(u * (u+1)) / 2 + v] = true;
       } else {
         m_mat[(v * (v+1)) / 2 + u] = true;
@@ -102,7 +103,7 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
 
   bool edge(typename base::index_type u, typename base::index_type v) const {
     if constexpr (std::is_base_of<undirected_tag, typename base::directed_category>::value) {
-      if (u <= v) {
+      if (u >= v) {
         return m_mat[(u * (u+1)) / 2 + v];
       } else {
         return m_mat[(v * (v+1)) / 2 + u];

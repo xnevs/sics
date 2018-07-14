@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "include/read_amalfi.h"
+#include "include/read_ldgraphs.h"
 
 #include "include/adjacency_listmat.h"
 
@@ -16,13 +16,13 @@ int main(int argc, char * argv[]) {
   char const * h_filename = argv[2];
 
   std::ifstream in{g_filename,std::ios::in|std::ios::binary};
-  auto g = read_amalfi<adjacency_listmat<uint16_t, bidirectional_tag>>(in);
+  auto g = read_ldgraphs_lab<adjacency_listmat<uint16_t, bidirectional_tag, uint8_t>>(in);
   in.close();
   in.open(h_filename,std::ios::in|std::ios::binary);
-  auto h = read_amalfi<adjacency_listmat<uint16_t, bidirectional_tag>>(in);
+  auto h = read_ldgraphs_lab<adjacency_listmat<uint16_t, bidirectional_tag, uint8_t>>(in);
   in.close();
 
-  auto index_order_g = vertex_order_DEG(g);
+  auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
   backtracking_ind(
