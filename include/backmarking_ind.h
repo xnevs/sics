@@ -4,41 +4,45 @@
 #include <iterator>
 #include <vector>
 
+// DONE
+
 template <
     typename G,
     typename H,
-    typename VertexEquiv,
-    typename EdgeEquiv,
+    typename Callback,
     typename IndexOrderG,
-    typename Callback>
+    typename VertexEquiv = default_vertex_label_equiv<G, H>,
+    typename EdgeEquiv = default_edge_label_equiv<G, H>>
 void backmarking_ind(
     G const & g,
     H const & h,
-    VertexEquiv const & vertex_equiv,
-    EdgeEquiv const & edge_equiv,
+    Callback const & callback,
     IndexOrderG const & index_order_g,
-    Callback const & callback) {
-    
+    VertexEquiv const & vertex_equiv = VertexEquiv(),
+    EdgeEquiv const & edge_equiv = EdgeEquiv()) {
+
   using IndexG = typename G::index_type;
   using IndexH = typename H::index_type;
-  
+
   struct explorer {
-  
+
     G const & g;
     H const & h;
-    VertexEquiv vertex_equiv;
-    EdgeEquiv edge_equiv;
-    IndexOrderG const & index_order_g;
     Callback callback;
-    
-  
+
+    IndexOrderG const & index_order_g;
+
+    vertex_equiv_helper<VertexEquiv> vertex_equiv;
+    edge_equiv_helper<EdgeEquiv> edge_equiv;
+
+
     IndexG m;
     IndexH n;
-    
+
     IndexG level;
 
     std::vector<IndexH> map;
-    
+
     std::vector<IndexG> low;
     std::vector<IndexG> M;
     IndexG M_get(IndexG u, IndexH v) {
@@ -50,27 +54,27 @@ void backmarking_ind(
     void build_M() {
       for (IndexG u=0; u<m; ++u) {
         for (IndexH v=0; v<n; ++v) {
-          if (!vertex_equiv(u, v)) {
+          if (!vertex_equiv(g, u, h, v)) {
             M_set(u, v, 0);
           }
         }
       }
     }
-    
+
     explorer(
         G const & g,
         H const & h,
-        VertexEquiv const & vertex_equiv,
-        EdgeEquiv const & edge_equiv,
+        Callback const & callback,
         IndexOrderG const & index_order_g,
-        Callback const & callback)
+        VertexEquiv const & vertex_equiv,
+        EdgeEquiv const & edge_equiv)
         : g{g},
           h{h},
+          callback{callback},
+          index_order_g{index_order_g},
           vertex_equiv{vertex_equiv},
           edge_equiv{edge_equiv},
-          index_order_g{index_order_g},
-          callback{callback},
-          
+
           m{g.num_vertices()},
           n{h.num_vertices()},
           level{0},
@@ -79,7 +83,7 @@ void backmarking_ind(
           M(m * n, m) {
       build_M();
     }
-    
+
     bool explore() {
       if (level == m) {
         return callback();
@@ -87,8 +91,7 @@ void backmarking_ind(
         auto x = index_order_g[level];
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
-          if (M_get(x, y) > low[level] &&
-              consistency(y)) {
+          if (consistency(y)) {
             for (IndexG i=level+1; i<m && level<low[i]; ++i) {
               low[i] = level;
             }
@@ -106,40 +109,41 @@ void backmarking_ind(
         return proceed;
       }
     }
-    
+
     bool consistency(IndexH y) {
       auto x = index_order_g[level];
+
+      if (M_get(x, y) <= low[level]) {
+        return false;
+      }
+
       for (IndexG i=low[level]; i<level; ++i) {
         auto u = index_order_g[i];
         auto v = map[u];
+
         if (v == y) {
           M_set(x, y, i+1);
           return false;
         }
+
         auto x_out = g.edge(x, u);
-        if (x_out != h.edge(y, v)) {
+        if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
           M_set(x, y, i+1);
           return false;
         }
-        auto x_in = g.edge(u, x);
-        if (x_in != h.edge(v, y)) {
-          M_set(x, y, i+1);
-          return false;
-        }
-        if (x_out && !edge_equiv(x, u, y, v)) {
-          M_set(x, y, i+1);
-          return false;
-        }
-        if (x_in && !edge_equiv(u, x, v, y)) {
-          M_set(x, y, i+1);
-          return false;
+        if constexpr (is_directed_v<G>) {
+          auto x_in = g.edge(u, x);
+          if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
+            M_set(x, y, i+1);
+            return false;
+          }
         }
       }
       M_set(x, y, m);
       return true;
     }
-  } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
-  
+  } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
+
   e.explore();
 }
 

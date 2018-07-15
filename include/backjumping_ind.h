@@ -7,6 +7,8 @@
 #include "graph_traits.h"
 #include "label_equivalence.h"
 
+// DONE
+
 template <
     typename G,
     typename H,
@@ -29,8 +31,9 @@ void backjumping_ind(
 
     G const & g;
     H const & h;
-    IndexOrderG const & index_order_g;
     Callback callback;
+
+    IndexOrderG const & index_order_g;
 
     vertex_equiv_helper<VertexEquiv> vertex_equiv;
     edge_equiv_helper<EdgeEquiv> edge_equiv;
@@ -48,14 +51,14 @@ void backjumping_ind(
     explorer(
         G const & g,
         H const & h,
-        IndexOrderG const & index_order_g,
         Callback const & callback,
+        IndexOrderG const & index_order_g,
         VertexEquiv const & vertex_equiv,
         EdgeEquiv const & edge_equiv)
         : g{g},
           h{h},
-          index_order_g{index_order_g},
           callback{callback},
+          index_order_g{index_order_g},
           vertex_equiv{vertex_equiv},
           edge_equiv{edge_equiv},
 
@@ -124,7 +127,7 @@ void backjumping_ind(
       }
       return std::next(it);
     }
-  } e(g, h, index_order_g, callback, vertex_equiv, edge_equiv);
+  } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
 
   e.explore();
 }
