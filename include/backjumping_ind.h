@@ -7,8 +7,6 @@
 #include "graph_traits.h"
 #include "label_equivalence.h"
 
-// DONE
-
 template <
     typename G,
     typename H,

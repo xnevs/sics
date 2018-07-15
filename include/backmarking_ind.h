@@ -4,8 +4,6 @@
 #include <iterator>
 #include <vector>
 
-// DONE
-
 template <
     typename G,
     typename H,
