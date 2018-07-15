@@ -4,61 +4,66 @@
 #include <iterator>
 #include <vector>
 
+#include "graph_traits.h"
+#include "label_equivalence.h"
+#include "consistency_utilities.h"
+
 template <
     typename G,
     typename H,
-    typename VertexEquiv,
-    typename EdgeEquiv,
+    typename Callback,
     typename IndexOrderG,
-    typename Callback>
+    typename VertexEquiv = default_vertex_label_equiv<G, H>,
+    typename EdgeEquiv = default_edge_label_equiv<G, H>>
 void backtracking_degreeprune_ind(
     G const & g,
     H const & h,
-    VertexEquiv const & vertex_equiv,
-    EdgeEquiv const & edge_equiv,
+    Callback const & callback,
     IndexOrderG const & index_order_g,
-    Callback const & callback) {
-    
+    VertexEquiv const & vertex_equiv = VertexEquiv(),
+    EdgeEquiv const & edge_equiv = EdgeEquiv()) {
+
   using IndexG = typename G::index_type;
   using IndexH = typename H::index_type;
-  
+
   struct explorer {
-  
+
     G const & g;
     H const & h;
-    VertexEquiv vertex_equiv;
-    EdgeEquiv edge_equiv;
-    IndexOrderG const & index_order_g;
     Callback callback;
-    
-  
+
+    IndexOrderG const & index_order_g;
+
+    vertex_equiv_helper<VertexEquiv> vertex_equiv;
+    edge_equiv_helper<EdgeEquiv> edge_equiv;
+
     IndexG m;
     IndexH n;
-    
+
     typename IndexOrderG::const_iterator x_it;
 
     std::vector<IndexH> map;
-    
+
     explorer(
         G const & g,
         H const & h,
-        VertexEquiv const & vertex_equiv,
-        EdgeEquiv const & edge_equiv,
+        Callback const & callback,
         IndexOrderG const & index_order_g,
-        Callback const & callback)
+        VertexEquiv const & vertex_equiv,
+        EdgeEquiv const & edge_equiv)
         : g{g},
           h{h},
+          callback{callback},
+          index_order_g{index_order_g},
           vertex_equiv{vertex_equiv},
           edge_equiv{edge_equiv},
-          index_order_g{index_order_g},
-          callback{callback},
-          
+
           m{g.num_vertices()},
           n{h.num_vertices()},
           x_it(std::cbegin(index_order_g)),
           map(m, n) {
     }
-    
+
     bool explore() {
       if (x_it == std::cend(index_order_g)) {
         return callback();
@@ -66,10 +71,7 @@ void backtracking_degreeprune_ind(
         auto x = *x_it;
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
-          if (vertex_equiv(x, y) &&
-              g.out_degree(x) <= h.out_degree(y) &&
-              g.in_degree(x) <= h.in_degree(y) &&
-              consistency(y)) {
+          if (consistency(y)) {
             map[x] = y;
             ++x_it;
             proceed = explore();
@@ -83,9 +85,18 @@ void backtracking_degreeprune_ind(
         return proceed;
       }
     }
-    
+
     bool consistency(IndexH y) {
       auto x = *x_it;
+
+      if (!vertex_equiv(g, x, h, y)) {
+        return false;
+      }
+
+      if (!degree_condition(g, x, h, y)) {
+        return false;
+      }
+
       for (auto it=std::cbegin(index_order_g); it!=x_it; ++it) {
         auto u = *it;
         auto v = map[u];
@@ -93,24 +104,20 @@ void backtracking_degreeprune_ind(
           return false;
         }
         auto x_out = g.edge(x, u);
-        if (x_out != h.edge(y, v)) {
+        if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
           return false;
         }
-        auto x_in = g.edge(u, x);
-        if (x_in != h.edge(v, y)) {
-          return false;
-        }
-        if (x_out && !edge_equiv(x, u, y, v)) {
-          return false;
-        }
-        if (x_in && !edge_equiv(u, x, v, y)) {
-          return false;
+        if constexpr (is_directed_v<G>) {
+          auto x_in = g.edge(u, x);
+          if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
+            return false;
+          }
         }
       }
       return true;
     }
-  } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
-  
+  } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
+
   e.explore();
 }
 

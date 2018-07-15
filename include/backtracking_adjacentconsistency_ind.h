@@ -4,63 +4,69 @@
 #include <iterator>
 #include <vector>
 
+#include "graph_traits.h"
+#include "graph_utilities.h"
+#include "label_equivalence.h"
+#include "consistency_utilities.h"
+
 template <
     typename G,
     typename H,
-    typename VertexEquiv,
-    typename EdgeEquiv,
+    typename Callback,
     typename IndexOrderG,
-    typename Callback>
+    typename VertexEquiv = default_vertex_label_equiv<G, H>,
+    typename EdgeEquiv = default_edge_label_equiv<G, H>>
 void backtracking_adjacentconsistency_ind(
     G const & g,
     H const & h,
-    VertexEquiv const & vertex_equiv,
-    EdgeEquiv const & edge_equiv,
+    Callback const & callback,
     IndexOrderG const & index_order_g,
-    Callback const & callback) {
-    
+    VertexEquiv const & vertex_equiv = VertexEquiv(),
+    EdgeEquiv const & edge_equiv = EdgeEquiv()) {
+
   using IndexG = typename G::index_type;
   using IndexH = typename H::index_type;
-  
+
   struct explorer {
-  
+
     G const & g;
     H const & h;
-    VertexEquiv vertex_equiv;
-    EdgeEquiv edge_equiv;
-    IndexOrderG const & index_order_g;
     Callback callback;
-    
-  
+
+    IndexOrderG const & index_order_g;
+
+    vertex_equiv_helper<VertexEquiv> vertex_equiv;
+    edge_equiv_helper<EdgeEquiv> edge_equiv;
+
     IndexG m;
     IndexH n;
-    
+
     typename IndexOrderG::const_iterator x_it;
 
     std::vector<IndexH> map;
     std::vector<IndexG> inv;
-    
+
     explorer(
         G const & g,
         H const & h,
-        VertexEquiv const & vertex_equiv,
-        EdgeEquiv const & edge_equiv,
+        Callback const & callback,
         IndexOrderG const & index_order_g,
-        Callback const & callback)
+        VertexEquiv const & vertex_equiv,
+        EdgeEquiv const & edge_equiv)
         : g{g},
           h{h},
+          callback{callback},
+          index_order_g{index_order_g},
           vertex_equiv{vertex_equiv},
           edge_equiv{edge_equiv},
-          index_order_g{index_order_g},
-          callback{callback},
-          
+
           m{g.num_vertices()},
           n{h.num_vertices()},
           x_it(std::cbegin(index_order_g)),
           map(m, n),
           inv(n, m) {
     }
-    
+
     bool explore() {
       if (x_it == std::cend(index_order_g)) {
         return callback();
@@ -68,9 +74,7 @@ void backtracking_adjacentconsistency_ind(
         auto x = *x_it;
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
-          if (vertex_equiv(x, y) &&
-              inv[y] == m &&
-              topology_consistency(x, y)) {
+          if (consistency(x, y)) {
             map[x] = y;
             inv[y] = x;
             ++x_it;
@@ -86,44 +90,15 @@ void backtracking_adjacentconsistency_ind(
         return proceed;
       }
     }
-    
-    bool topology_consistency(IndexG u, IndexH v) {
-      for (auto i : g.adjacent_vertices(u)) {
-        auto j = map[i];
-        if (j != n) {
-          if (!h.edge(v, j) || !edge_equiv(u, i, v, j)) {
-            return false;
-          }
-        }
-      }
-      for (auto i : g.inv_adjacent_vertices(u)) {
-        auto j = map[i];
-        if (j != n) {
-          if (!h.edge(j, v) || !edge_equiv(i, u, j, v)) {
-            return false;
-          }
-        }
-      }
-      for (auto j : h.adjacent_vertices(v)) {
-        auto i = inv[j];
-        if (i != m) {
-          if (!g.edge(u, i)) {
-            return false;
-          }
-        }
-      }
-      for (auto j : h.inv_adjacent_vertices(v)) {
-        auto i = inv[j];
-        if (i != m) {
-          if (!g.edge(i, u)) {
-            return false;
-          }
-        }
-      }
-      return true;
+
+    bool consistency(IndexG u, IndexH v) {
+      return
+          vertex_equiv(g, u, h, v) &&
+          inv[v] == m &&
+          adjacent_consistency_ind(g, u, h, v, map, inv, edge_equiv);
     }
-  } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
-  
+  } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
+
   e.explore();
 }
 

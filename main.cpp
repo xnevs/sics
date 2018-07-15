@@ -14,6 +14,10 @@
 #include "include/backjumping_ind.h"
 #include "include/backmarking_ind.h"
 #include "include/backmarking_degreeprune_ind.h"
+#include "include/backtracking_degreeprune_ind.h"
+#include "include/backtracking_adjacentconsistency_ind.h"
+#include "include/backtracking_degreeprune_adjacentconsistency_ind.h"
+#include "include/backtracking_adjacentconsistency_forwardcount_ind.h"
 
 int main(int argc, char * argv[]) {
   char const * g_filename = argv[1];
@@ -29,7 +33,7 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  backmarking_ind(
+  backtracking_degreeprune_adjacentconsistency_ind(
       g,
       h,
       [&count]() {++count; return true;},

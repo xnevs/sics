@@ -4,6 +4,10 @@
 #include <iterator>
 #include <vector>
 
+#include "graph_traits.h"
+#include "label_equivalence.h"
+#include "consistency_utilities.h"
+
 template <
     typename G,
     typename H,
@@ -33,7 +37,6 @@ void backmarking_degreeprune_ind(
     vertex_equiv_helper<VertexEquiv> vertex_equiv;
     edge_equiv_helper<EdgeEquiv> edge_equiv;
 
-
     IndexG m;
     IndexH n;
 
@@ -52,19 +55,9 @@ void backmarking_degreeprune_ind(
     void build_M() {
       for (IndexG u=0; u<m; ++u) {
         for (IndexH v=0; v<n; ++v) {
-          if (!vertex_equiv(g, u, h, v)) {
+          if (!vertex_equiv(g, u, h, v) ||
+              !degree_condition(g, u, h, v)) {
             M_set(u, v, 0);
-          } else {
-            if constexpr (is_directed_v<G>) {
-              if (g.out_degree(u) > h.out_degree(v) ||
-                  g.in_degree(u) > h.in_degree(v)) {
-                M_set(u, v, 0);
-              }
-            } else {
-              if (g.degree(u) > h.degree(v)) {
-                M_set(u, v, 0);
-              }
-            }
           }
         }
       }
