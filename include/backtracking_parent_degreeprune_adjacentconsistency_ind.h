@@ -2,7 +2,6 @@
 #define GMCS_BACKTRACKING_PARENT_DEGREEPRUNE_ADJACENTCONSISTENCY_IND_H_
 
 #include <iterator>
-#include <numeric>
 #include <tuple>
 #include <vector>
 

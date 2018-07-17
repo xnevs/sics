@@ -20,27 +20,26 @@ void forwardchecking_ind(
     EdgeEquiv const & edge_equiv,
     IndexOrderG const & index_order_g,
     Callback const & callback) {
-    
+
   using IndexG = typename G::index_type;
   using IndexH = typename H::index_type;
-  
+
   struct explorer {
-  
+
     G const & g;
     H const & h;
     VertexEquiv vertex_equiv;
     EdgeEquiv edge_equiv;
     IndexOrderG const & index_order_g;
     Callback callback;
-    
-  
+
     IndexG m;
     IndexH n;
-    
+
     IndexG level;
 
     std::vector<IndexH> map;
-    
+
     std::vector<char> M;
     bool M_get(IndexG u, IndexH v) {
       return M[u*n + v];
@@ -61,7 +60,7 @@ void forwardchecking_ind(
       }
     }
     multi_stack<std::pair<IndexG,IndexH>> M_mst;
-    
+
     explorer(
         G const & g,
         H const & h,
@@ -75,7 +74,7 @@ void forwardchecking_ind(
           edge_equiv{edge_equiv},
           index_order_g{index_order_g},
           callback{callback},
-          
+
           m{g.num_vertices()},
           n{h.num_vertices()},
           level{0},
@@ -84,7 +83,7 @@ void forwardchecking_ind(
           M_mst(m*n, m) {
       build_M();
     }
-    
+
     bool explore() {
       if (level == m) {
         return callback();
@@ -111,10 +110,10 @@ void forwardchecking_ind(
         return proceed;
       }
     }
-    
+
     bool forward_check(IndexH y) {
       auto x = index_order_g[level];
-      
+
       bool not_empty = true;
       for (IndexG i=level+1; i<m && not_empty; ++i) {
         auto u = index_order_g[i];
@@ -136,7 +135,7 @@ void forwardchecking_ind(
       }
       return not_empty;
     }
-    
+
     void revert_M() {
       while (!M_mst.level_empty()) {
         IndexG u;
@@ -147,7 +146,7 @@ void forwardchecking_ind(
       }
     }
   } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
-  
+
   e.explore();
 }
 

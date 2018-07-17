@@ -2,6 +2,7 @@
 #define GMCS_CONSISTENCY_UTILITIES_H_
 
 #include <optional>
+#include <tuple>
 
 #include "graph_traits.h"
 #include "graph_utilities.h"

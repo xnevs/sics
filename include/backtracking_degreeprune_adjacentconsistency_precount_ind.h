@@ -2,6 +2,7 @@
 #define GMCS_BACKTRACKING_DEGREEPRUNE_ADJACENTCONSISTENCY_PRECOUNT_IND_H_
 
 #include <iterator>
+#include <tuple>
 #include <vector>
 
 #include "graph_traits.h"
