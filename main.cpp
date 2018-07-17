@@ -31,22 +31,24 @@
 #include "include/backtracking_degreeprune_adjacentconsistency_precount_ind.h"
 #include "include/backtracking_parent_adjacentconsistency_precount_ind.h"
 #include "include/backtracking_parent_degreeprune_adjacentconsistency_precount_ind.h"
+#include "include/forwardchecking_ind.h"
+#include "include/forwardchecking_degreeprune_ind.h"
 
 int main(int argc, char * argv[]) {
   char const * g_filename = argv[1];
   char const * h_filename = argv[2];
 
   std::ifstream in{g_filename,std::ios::in|std::ios::binary};
-  auto g = read_amalfi<adjacency_listmat<uint16_t, bidirectional_tag>>(in);
+  auto g = read_amalfi<adjacency_listmat<uint16_t, undirected_tag>>(in);
   in.close();
   in.open(h_filename,std::ios::in|std::ios::binary);
-  auto h = read_amalfi<adjacency_listmat<uint16_t, bidirectional_tag>>(in);
+  auto h = read_amalfi<adjacency_listmat<uint16_t, undirected_tag>>(in);
   in.close();
 
-  auto index_order_g = vertex_order_RDEG(g);
+  auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  backtracking_parent_degreeprune_adjacentconsistency_forwardcount_ind(
+  forwardchecking_degreeprune_ind(
       g,
       h,
       [&count]() {++count; return true;},
