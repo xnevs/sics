@@ -27,6 +27,10 @@
 #include "include/backtracking_parent_forwardcount_ind.h"
 #include "include/backtracking_parent_adjacentconsistency_forwardcount_ind.h"
 #include "include/backtracking_parent_degreeprune_adjacentconsistency_forwardcount_ind.h"
+#include "include/backtracking_adjacentconsistency_precount_ind.h"
+#include "include/backtracking_degreeprune_adjacentconsistency_precount_ind.h"
+#include "include/backtracking_parent_adjacentconsistency_precount_ind.h"
+#include "include/backtracking_parent_degreeprune_adjacentconsistency_precount_ind.h"
 
 int main(int argc, char * argv[]) {
   char const * g_filename = argv[1];
@@ -39,7 +43,7 @@ int main(int argc, char * argv[]) {
   auto h = read_amalfi<adjacency_listmat<uint16_t, bidirectional_tag>>(in);
   in.close();
 
-  auto index_order_g = vertex_order_GreatestConstraintFirst(g);
+  auto index_order_g = vertex_order_RDEG(g);
 
   int count = 0;
   backtracking_parent_degreeprune_adjacentconsistency_forwardcount_ind(

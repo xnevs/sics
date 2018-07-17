@@ -45,7 +45,7 @@ std::vector<typename G::index_type> vertex_order_RDEG(G const & g) {
           });
         }
 
-        if (bestn == n || std::make_tuple(rdeg, g.degree(i), i) > std::make_tuple(bestv, g.degree(bestn), bestn)) {
+        if (bestn == n || std::forward_as_tuple(rdeg, g.degree(i), i) > std::forward_as_tuple(bestv, g.degree(bestn), bestn)) {
           bestn = i;
           bestv = rdeg;
         }
