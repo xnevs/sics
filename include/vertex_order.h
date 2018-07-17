@@ -1,12 +1,14 @@
 #ifndef GMCS_VERTEX_ORDER_H_
 #define GMCS_VERTEX_ORDER_H_
 
-#include <utility>
 #include <algorithm>
 #include <numeric>
 #include <tuple>
 #include <vector>
 #include <set>
+
+#include "graph_traits.h"
+#include "graph_utilities.h"
 
 template <typename G>
 std::vector<typename G::index_type> vertex_order_DEG(G const & g) {
@@ -32,17 +34,18 @@ std::vector<typename G::index_type> vertex_order_RDEG(G const & g) {
     int bestv = -1;
     for (Index i=0; i<n; ++i) {
       if (avail[i]) {
-        auto i_out_edges = g.out_edges(i);
-        auto i_in_edges = g.in_edges(i);
-        int rdeg =
-            std::count_if(std::begin(i_out_edges), std::end(i_out_edges), [&avail](auto oe) {
-              return !avail[oe.target];
-            })
-            +
-            std::count_if(std::begin(i_in_edges), std::end(i_in_edges), [&avail](auto ie) {
-              return !avail[ie.target];
-            });
-        if (bestn == n || std::make_pair(rdeg, g.degree(i)) > std::make_pair(bestv, g.degree(bestn))) {
+        auto i_out_edges = edges_or_out_edges(g, i);
+        int rdeg = std::count_if(std::begin(i_out_edges), std::end(i_out_edges), [&avail](auto oe) {
+          return !avail[oe.target];
+        });
+        if (is_directed_v<G>) {
+          auto i_in_edges = g.in_edges(i);
+          rdeg += std::count_if(std::begin(i_in_edges), std::end(i_in_edges), [&avail](auto ie) {
+            return !avail[ie.target];
+          });
+        }
+
+        if (bestn == n || std::make_tuple(rdeg, g.degree(i), i) > std::make_tuple(bestv, g.degree(bestn), bestn)) {
           bestn = i;
           bestv = rdeg;
         }
@@ -87,47 +90,55 @@ std::vector<typename G::index_type> vertex_order_GreatestConstraintFirst(G const
     Index u = *u_it;
 
     if (flags[u] == Flag::unv) {
-      for (auto oe : g.out_edges(u)) {
+      for (auto oe : edges_or_out_edges(g, u)) {
         --std::get<2>(ranks[oe.target]);
       }
-      for (auto ie : g.in_edges(u)) {
-        --std::get<2>(ranks[ie.target]);
+      if constexpr (is_directed_v<G>) {
+        for (auto ie : g.in_edges(u)) {
+          --std::get<2>(ranks[ie.target]);
+        }
       }
     } else if (flags[u] == Flag::neigh) {
-      for (auto oe : g.out_edges(u)) {
+      for (auto oe : edges_or_out_edges(g, u)) {
         --std::get<1>(ranks[oe.target]);
       }
-      for (auto ie : g.in_edges(u)) {
-        --std::get<1>(ranks[ie.target]);
+      if constexpr (is_directed_v<G>) {
+        for (auto ie : g.in_edges(u)) {
+          --std::get<1>(ranks[ie.target]);
+        }
       }
     }
 
     std::swap(vertex_order[m], *u_it);
     flags[u] = Flag::vis;
 
-    for (auto oe : g.out_edges(u)) {
+    for (auto oe : edges_or_out_edges(g, u)) {
       auto v = oe.target;
       ++std::get<0>(ranks[v]);
       if (flags[v] == Flag::unv) {
         flags[v] = Flag::neigh;
-        for (auto v_oe : g.out_edges(v)) {
+        for (auto v_oe : edges_or_out_edges(g, v)) {
           ++std::get<1>(ranks[v_oe.target]);
         }
-        for (auto v_ie : g.in_edges(v)) {
-          ++std::get<1>(ranks[v_ie.target]);
+        if constexpr (is_directed_v<G>) {
+          for (auto v_ie : g.in_edges(v)) {
+            ++std::get<1>(ranks[v_ie.target]);
+          }
         }
       }
     }
-    for (auto ie : g.in_edges(u)) {
-      auto v = ie.target;
-      ++std::get<0>(ranks[v]);
-      if (flags[v] == Flag::unv) {
-        flags[v] = Flag::neigh;
-        for (auto v_oe : g.out_edges(v)) {
-          ++std::get<1>(ranks[v_oe.target]);
-        }
-        for (auto v_ie : g.in_edges(v)) {
-          ++std::get<1>(ranks[v_ie.target]);
+    if constexpr (is_directed_v<G>) {
+      for (auto ie : g.in_edges(u)) {
+        auto v = ie.target;
+        ++std::get<0>(ranks[v]);
+        if (flags[v] == Flag::unv) {
+          flags[v] = Flag::neigh;
+          for (auto v_oe : g.out_edges(v)) {
+            ++std::get<1>(ranks[v_oe.target]);
+          }
+          for (auto v_ie : g.in_edges(v)) {
+            ++std::get<1>(ranks[v_ie.target]);
+          }
         }
       }
     }
