@@ -1,7 +1,6 @@
 #ifndef GMCS_CONSISTENCY_UTILITIES_H_
 #define GMCS_CONSISTENCY_UTILITIES_H_
 
-#include <utility>
 #include <optional>
 
 #include "graph_traits.h"
@@ -105,7 +104,7 @@ auto h_adjacent_consistency_mono(
   using h_count_type = std::conditional_t<
       is_directed_v<H>,
       std::tuple<typename H::index_type, typename H::index_type>,
-      std::tuple<typename H::index_type>>;
+      typename H::index_type>;
   h_count_type v_count{};
 
   auto m = g.num_vertices();
@@ -116,7 +115,11 @@ auto h_adjacent_consistency_mono(
       if (!g.edge(u, i) || !edge_equiv(g, u, i, h, v, oe)) {
         return std::optional<h_count_type>{};
       }
-      ++std::get<0>(v_count);
+      if constexpr (is_directed_v<H>) {
+        ++std::get<0>(v_count);
+      } else {
+        ++v_count;
+      }
     }
   }
   if constexpr (is_directed_v<H>) {

@@ -49,26 +49,28 @@ void backtracking_adjacentconsistency_precount_ind(
     using g_count_type = std::conditional_t<
         is_directed_v<G>,
         std::tuple<IndexG, IndexG>,
-        std::tuple<IndexG>>;
+        IndexG>;
     std::vector<g_count_type> g_count;
     void build_g_count() {
-      std::vector<IndexG> index_pos_g(m);
-      for (IndexG i=0; i<m; ++i) {
-        index_pos_g[index_order_g[i]] = i;
-      }
-      for (IndexH u=0; u<m; ++u) {
+      std::vector<bool> done(m, false);
+      for (auto u : index_order_g) {
         for (auto oe : edges_or_out_edges(g, u)) {
-          auto i = oe.target;
-          if (index_pos_g[u] < index_pos_g[i]) {
+          if (done[oe.target]) {
             if constexpr (is_directed_v<G>) {
-              ++std::get<1>(g_count[i]);
+              ++std::get<0>(g_count[u]);
             } else {
-              ++std::get<0>(g_count[i]);
+              ++g_count[u];
             }
-          } else {
-            ++std::get<0>(g_count[u]);
           }
         }
+        if constexpr (is_directed_v<G>) {
+          for (auto ie : g.in_edges(u)) {
+            if (done[ie.target]) {
+              ++std::get<1>(g_count[u]);
+            }
+          }
+        }
+        done[u] = true;
       }
     }
 

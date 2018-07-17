@@ -85,37 +85,35 @@ void backtracking_parent_forwardcount_ind(
 
     using g_count_type = std::conditional_t<
         is_directed_v<G>,
-        std::pair<IndexG, IndexG>,
+        std::tuple<IndexG, IndexG>,
         IndexG>;
     std::vector<g_count_type> g_count;
     void build_g_count() {
-      std::vector<IndexG> index_pos_g(m);
-      for (IndexG i=0; i<m; ++i) {
-        index_pos_g[index_order_g[i]] = i;
-      }
-      for (IndexH u=0; u<m; ++u) {
+      std::vector<bool> done(m, false);
+      for (auto u : index_order_g) {
         for (auto oe : edges_or_out_edges(g, u)) {
-          auto i = oe.target;
-          if (index_pos_g[u] < index_pos_g[i]) {
+          if (done[oe.target]) {
             if constexpr (is_directed_v<G>) {
-              ++g_count[i].second;
-            } else {
-              ++g_count[i];
-            }
-          } else {
-            if constexpr (is_directed_v<G>) {
-              ++g_count[u].first;
+              ++std::get<0>(g_count[u]);
             } else {
               ++g_count[u];
             }
           }
         }
+        if constexpr (is_directed_v<G>) {
+          for (auto ie : g.in_edges(u)) {
+            if (done[ie.target]) {
+              ++std::get<1>(g_count[u]);
+            }
+          }
+        }
+        done[u] = true;
       }
     }
 
     using h_count_type = std::conditional_t<
         is_directed_v<H>,
-        std::pair<IndexH, IndexH>,
+        std::tuple<IndexH, IndexH>,
         IndexH>;
     std::vector<h_count_type> h_count;
 
@@ -236,10 +234,10 @@ void backtracking_parent_forwardcount_ind(
     void update_h_count(IndexH v) {
       if constexpr (is_directed_v<H>) {
         for (auto oe : h.out_edges(v)) {
-          ++h_count[oe.target].second;
+          ++std::get<1>(h_count[oe.target]);
         }
         for (auto ie : h.in_edges(v)) {
-          ++h_count[ie.target].first;
+          ++std::get<0>(h_count[ie.target]);
         }
       } else {
         for (auto e : h.edges(v)) {
@@ -251,10 +249,10 @@ void backtracking_parent_forwardcount_ind(
     void revert_h_count(IndexH v) {
       if constexpr (is_directed_v<H>) {
         for (auto oe : h.out_edges(v)) {
-          --h_count[oe.target].second;
+          --std::get<1>(h_count[oe.target]);
         }
         for (auto ie : h.in_edges(v)) {
-          --h_count[ie.target].first;
+          --std::get<0>(h_count[ie.target]);
         }
       } else {
         for (auto e : h.edges(v)) {
