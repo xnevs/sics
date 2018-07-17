@@ -38,7 +38,7 @@ std::vector<typename G::index_type> vertex_order_RDEG(G const & g) {
         int rdeg = std::count_if(std::begin(i_out_edges), std::end(i_out_edges), [&avail](auto oe) {
           return !avail[oe.target];
         });
-        if (is_directed_v<G>) {
+        if constexpr (is_directed_v<G>) {
           auto i_in_edges = g.in_edges(i);
           rdeg += std::count_if(std::begin(i_in_edges), std::end(i_in_edges), [&avail](auto ie) {
             return !avail[ie.target];
