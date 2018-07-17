@@ -1,6 +1,9 @@
 #ifndef GMCS_CONSISTENCY_UTILITIES_H_
 #define GMCS_CONSISTENCY_UTILITIES_H_
 
+#include <utility>
+#include <optional>
+
 #include "graph_traits.h"
 #include "graph_utilities.h"
 
@@ -83,6 +86,52 @@ bool adjacent_consistency_ind(
     }
   }
   return true;
+}
+
+template <
+    typename G,
+    typename H,
+    typename Map,
+    typename Inv,
+    typename EdgeEquiv>
+auto h_adjacent_consistency_mono(
+    G const & g,
+    typename G::index_type u,
+    H const & h,
+    typename H::index_type v,
+    Map const & map,
+    Inv const & inv,
+    EdgeEquiv const & edge_equiv) {
+  using h_count_type = std::conditional_t<
+      is_directed_v<H>,
+      std::tuple<typename H::index_type, typename H::index_type>,
+      std::tuple<typename H::index_type>>;
+  h_count_type v_count{};
+
+  auto m = g.num_vertices();
+  for (auto oe : edges_or_out_edges(h, v)) {
+    auto j = oe.target;
+    auto i = inv[j];
+    if (i != m) {
+      if (!g.edge(u, i) || !edge_equiv(g, u, i, h, v, oe)) {
+        return std::optional<h_count_type>{};
+      }
+      ++std::get<0>(v_count);
+    }
+  }
+  if constexpr (is_directed_v<H>) {
+    for (auto ie : h.in_edges(v)) {
+      auto j = ie.target;
+      auto i = inv[j];
+      if (i != m) {
+        if (!g.edge(i, u) || !edge_equiv(g, i, u, h, ie, v)) {
+          return std::optional<h_count_type>{};
+        }
+        ++std::get<1>(v_count);
+      }
+    }
+  }
+  return std::optional{v_count};
 }
 
 template <typename G, typename H>
