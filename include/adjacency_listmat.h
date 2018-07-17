@@ -13,8 +13,7 @@ template <
     typename DirectedCategory,
     typename VertexLabel = void,
     typename EdgeLabel = void>
-class adjacency_listmat : public adjacency_list<Index, DirectedCategory, VertexLabel, EdgeLabel> {
-};
+class adjacency_listmat;
 
 // TODO implement EdgeLabel != void
 

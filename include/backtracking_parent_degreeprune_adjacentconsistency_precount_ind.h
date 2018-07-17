@@ -86,31 +86,29 @@ void backtracking_parent_degreeprune_adjacentconsistency_precount_ind(
 
     using g_count_type = std::conditional_t<
         is_directed_v<G>,
-        std::pair<IndexG, IndexG>,
+        std::tuple<IndexG, IndexG>,
         IndexG>;
     std::vector<g_count_type> g_count;
     void build_g_count() {
-      std::vector<IndexG> index_pos_g(m);
-      for (IndexG i=0; i<m; ++i) {
-        index_pos_g[index_order_g[i]] = i;
-      }
-      for (IndexH u=0; u<m; ++u) {
+      std::vector<bool> done(m, false);
+      for (auto u : index_order_g) {
         for (auto oe : edges_or_out_edges(g, u)) {
-          auto i = oe.target;
-          if (index_pos_g[u] < index_pos_g[i]) {
+          if (done[oe.target]) {
             if constexpr (is_directed_v<G>) {
-              ++g_count[i].second;
-            } else {
-              ++g_count[i];
-            }
-          } else {
-            if constexpr (is_directed_v<G>) {
-              ++g_count[u].first;
+              ++std::get<0>(g_count[u]);
             } else {
               ++g_count[u];
             }
           }
         }
+        if constexpr (is_directed_v<G>) {
+          for (auto ie : g.in_edges(u)) {
+            if (done[ie.target]) {
+              ++std::get<1>(g_count[u]);
+            }
+          }
+        }
+        done[u] = true;
       }
     }
 
@@ -140,8 +138,7 @@ void backtracking_parent_degreeprune_adjacentconsistency_precount_ind(
           map(m, n),
           inv(n, m),
           parents(m),
-          g_count(m),
-          h_count(n) {
+          g_count(m) {
       build_parents();
       build_g_count();
     }
@@ -159,11 +156,9 @@ void backtracking_parent_degreeprune_adjacentconsistency_precount_ind(
             if (consistency(x, y)) {
               map[x] = y;
               inv[y] = x;
-              update_h_count(y);
               ++x_it;
               proceed = explore();
               --x_it;
-              revert_h_count(y);
               inv[y] = m;
               map[x] = n;
               if (!proceed) {
@@ -178,11 +173,9 @@ void backtracking_parent_degreeprune_adjacentconsistency_precount_ind(
             if (consistency(x, y)) {
               map[x] = y;
               inv[y] = x;
-              update_h_count(y);
               ++x_it;
               proceed = explore();
               --x_it;
-              revert_h_count(y);
               inv[y] = m;
               map[x] = n;
               if (!proceed) {
@@ -209,41 +202,16 @@ void backtracking_parent_degreeprune_adjacentconsistency_precount_ind(
     }
 
     bool consistency(IndexG u, IndexH v) {
-      return
-          vertex_equiv(g, u, h, v) &&
-          inv[v] == m &&
-          g_count[u] == h_count[v] &&
-          degree_condition(g, u, h, v) &&
-          adjacent_consistency_mono(g, u, h, v, map, inv, edge_equiv);
-    }
-
-    void update_h_count(IndexH v) {
-      if constexpr (is_directed_v<H>) {
-        for (auto oe : h.out_edges(v)) {
-          ++h_count[oe.target].second;
-        }
-        for (auto ie : h.in_edges(v)) {
-          ++h_count[ie.target].first;
-        }
-      } else {
-        for (auto e : h.edges(v)) {
-          ++h_count[e.target];
-        }
+      if (!vertex_equiv(g, u, h, v) ||
+          inv[v] != m ||
+          !degree_condition(g, u, h, v)) {
+        return false;
       }
-    }
-
-    void revert_h_count(IndexH v) {
-      if constexpr (is_directed_v<H>) {
-        for (auto oe : h.out_edges(v)) {
-          --h_count[oe.target].second;
-        }
-        for (auto ie : h.in_edges(v)) {
-          --h_count[ie.target].first;
-        }
+      auto v_count = h_adjacent_consistency_mono(g, u, h, v, map, inv, edge_equiv);
+      if (v_count) {
+        return *v_count == g_count[u];
       } else {
-        for (auto e : h.edges(v)) {
-          --h_count[e.target];
-        }
+        return false;
       }
     }
   } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
