@@ -67,7 +67,7 @@ void conflictbackjumping_ind(
           level{0},
           map(m, n),
           backjump_level{m},
-          conflicts(m, boost::dynamic_bitset<>(m+1)) {
+          conflicts(m, boost::dynamic_bitset<>(m)) {
     }
 
     bool explore() {
@@ -96,7 +96,7 @@ void conflictbackjumping_ind(
         if (pos != boost::dynamic_bitset<>::npos) {
           backjump_level = m - pos;
         } else {
-          backjump_level = level;
+          backjump_level = 0;
         }
 
         if (backjump_level > 0) {
@@ -110,7 +110,6 @@ void conflictbackjumping_ind(
       auto x = index_order_g[level];
 
       if (!vertex_equiv(g, x, h, y)) {
-        conflicts[level].set(m);
         return false;
       }
 
