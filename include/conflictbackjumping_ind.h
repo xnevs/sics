@@ -67,7 +67,7 @@ void conflictbackjumping_ind(
           level{0},
           map(m, n),
           backjump_level{m},
-          conflicts(m, boost::dynamic_bitset<>(m)) {
+          conflicts(m, boost::dynamic_bitset<>(m)) {  // one more than needed (so we can always use find_next)
     }
 
     bool explore() {
