@@ -5,64 +5,83 @@
 #include <vector>
 #include <stack>
 
+#include "graph_traits.h"
+#include "label_equivalence.h"
+
 template <
     typename G,
     typename H,
-    typename VertexEquiv,
-    typename EdgeEquiv,
+    typename Callback,
     typename IndexOrderG,
-    typename Callback>
+    typename VertexEquiv = default_vertex_label_equiv<G, H>,
+    typename EdgeEquiv = default_edge_label_equiv<G, H>>
 void lazyforwardchecking_parent_ind(
     G const & g,
     H const & h,
-    VertexEquiv const & vertex_equiv,
-    EdgeEquiv const & edge_equiv,
+    Callback const & callback,
     IndexOrderG const & index_order_g,
-    Callback const & callback) {
-    
+    VertexEquiv const & vertex_equiv = VertexEquiv(),
+    EdgeEquiv const & edge_equiv = EdgeEquiv()) {
+
   using IndexG = typename G::index_type;
   using IndexH = typename H::index_type;
-  
+
   struct explorer {
-  
+
     G const & g;
     H const & h;
-    VertexEquiv vertex_equiv;
-    EdgeEquiv edge_equiv;
-    IndexOrderG const & index_order_g;
     Callback callback;
-    
-  
+
+    IndexOrderG const & index_order_g;
+
+    vertex_equiv_helper<VertexEquiv> vertex_equiv;
+    edge_equiv_helper<EdgeEquiv> edge_equiv;
+
     IndexG m;
     IndexH n;
-    
+
     IndexG level;
 
     std::vector<IndexH> map;
-    
-    typename H::adjacent_vertices_container_type h_vertices;
-    using adjacent_vertices_range_type = boost::iterator_range<typename H::adjacent_vertices_container_type::const_iterator>;
-    adjacent_vertices_range_type h_vertices_range;
-    std::vector<std::pair<IndexG, bool>> parents;
+
+    using parent_type = std::conditional_t<
+        is_directed_v<H>,
+        std::tuple<IndexG, bool>,
+        std::tuple<IndexG>>;
+    std::vector<parent_type> parents;
     void build_parents() {
+      for (IndexG u=0; u<m; ++u) {
+        std::get<0>(parents[u]) = m;
+      }
       std::vector<bool> done(m, false);
       auto end = std::prev(std::cend(index_order_g));
       for (auto it=std::cbegin(index_order_g); it!=end; ++it) {
         auto u = *it;
         done[u] = true;
-        for (auto i : g.adjacent_vertices(u)) {
-          if (parents[i].first == m && !done[i]) {
-            parents[i] = {u, true};
+        if constexpr (is_directed_v<G>) {
+          for (auto oe : g.out_edges(u)) {
+            auto i = oe.target;
+            if (std::get<0>(parents[i]) == m && !done[i]) {
+              parents[i] = {u, true};
+            }
           }
-        }
-        for (auto i : g.inv_adjacent_vertices(u)) {
-          if (parents[i].first == m && !done[i]) {
-            parents[i] = {u, false};
+          for (auto ie : g.in_edges(u)) {
+            auto i = ie.target;
+            if (std::get<0>(parents[i]) == m && !done[i]) {
+              parents[i] = {u, false};
+            }
+          }
+        } else {
+          for (auto e : g.edges(u)) {
+            auto i = e.target;
+            if (std::get<0>(parents[i]) == m && !done[i]) {
+              parents[i] = {u};
+            }
           }
         }
       }
     }
-    
+
     std::vector<char> M;
     bool M_get(IndexG u, IndexH v) {
       return M[u*n + v];
@@ -76,81 +95,97 @@ void lazyforwardchecking_parent_ind(
     void build_M() {
       for (IndexG u=0; u<m; ++u) {
         for (IndexH v=0; v<n; ++v) {
-          if (vertex_equiv(u, v)) {
+          if (vertex_equiv(g, u, h, v)) {
             M_set(u, v);
           }
         }
       }
     }
     std::vector<std::stack<std::pair<IndexG,IndexH>>> M_sts;
-    
+
     explorer(
         G const & g,
         H const & h,
-        VertexEquiv const & vertex_equiv,
-        EdgeEquiv const & edge_equiv,
+        Callback const & callback,
         IndexOrderG const & index_order_g,
-        Callback const & callback)
+        VertexEquiv const & vertex_equiv,
+        EdgeEquiv const & edge_equiv)
         : g{g},
           h{h},
+          callback{callback},
+          index_order_g{index_order_g},
           vertex_equiv{vertex_equiv},
           edge_equiv{edge_equiv},
-          index_order_g{index_order_g},
-          callback{callback},
-          
+
           m{g.num_vertices()},
           n{h.num_vertices()},
           level{0},
           map(m, n),
-          h_vertices(n),
-          h_vertices_range(std::cbegin(h_vertices), std::cend(h_vertices)),
-          parents(m, {m, false}),
+          parents(m),
           M(m * n, false),
           M_sts(m) {
-      std::iota(std::begin(h_vertices), std::end(h_vertices), 0);
       build_parents();
       build_M();
     }
-    
+
     bool explore() {
       if (level == m) {
         return callback();
       } else {
         auto x = index_order_g[level];
         bool proceed = true;
-        for (auto y : get_candidates(x)) {
-          if (M_get(x, y) &&
-              consistency(y)) {
-            map[x] = y;
-            ++level;
-            proceed = explore();
-            --level;
-            map[x] = n;
-            revert_M();
-            if (!proceed) {
-              break;
+
+        parent_type p = parents[x];
+        if (std::get<0>(p) == m) {
+          for (IndexH y=0; y<n; ++y) {
+            if (M_get(x, y) &&
+                consistency(y)) {
+              map[x] = y;
+              ++level;
+              proceed = explore();
+              --level;
+              map[x] = n;
+              revert_M();
+              if (!proceed) {
+                break;
+              }
+            }
+          }
+        } else {
+          for (auto he : get_parent_edges(p)) {
+            // TODO maybe add edge_equiv() check for parent
+            auto y = he.target;
+            if (M_get(x, y) &&
+                consistency(y)) {
+              map[x] = y;
+              ++level;
+              proceed = explore();
+              --level;
+              map[x] = n;
+              revert_M();
+              if (!proceed) {
+                break;
+              }
             }
           }
         }
+
         return proceed;
       }
     }
-    
-    adjacent_vertices_range_type get_candidates(IndexG u) {
-      IndexG parent;
-      bool out;
-      std::tie(parent, out) = parents[u];
-      if (parent != m) {
-        if (out) {
-          return h.adjacent_vertices(map[parent]);
+
+    auto get_parent_edges(parent_type p) {
+      if constexpr (is_directed_v<H>) {
+        if (std::get<1>(p)) {
+          return h.out_edges(map[std::get<0>(p)]);
         } else {
-          return h.inv_adjacent_vertices(map[parent]);
+          return h.in_edges(map[std::get<0>(p)]);
         }
       } else {
-        return h_vertices_range;
+        return h.edges(map[std::get<0>(p)]);
       }
     }
-    
+
     bool consistency(IndexH y) {
       auto x = index_order_g[level];
       for (IndexG i=0; i<level; ++i) {
@@ -158,35 +193,27 @@ void lazyforwardchecking_parent_ind(
         auto v = map[u];
         if (v == y) {
           M_unset(x, y);
-          M_sts[i].push({x, y});
+          M_sts[i].emplace(x, y);
           return false;
         }
         auto x_out = g.edge(x, u);
-        if (x_out != h.edge(y, v)) {
+        if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
           M_unset(x, y);
-          M_sts[i].push({x, y});
+          M_sts[i].emplace(x, y);
           return false;
         }
-        auto x_in = g.edge(u, x);
-        if (x_in != h.edge(v, y)) {
-          M_unset(x, y);
-          M_sts[i].push({x, y});
-          return false;
-        }
-        if (x_out && !edge_equiv(x, u, y, v)) {
-          M_unset(x, y);
-          M_sts[i].push({x, y});
-          return false;
-        }
-        if (x_in && !edge_equiv(u, x, v, y)) {
-          M_unset(x, y);
-          M_sts[i].push({x, y});
-          return false;
+        if constexpr (is_directed_v<G>) {
+          auto x_in = g.edge(u, x);
+          if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
+            M_unset(x, y);
+            M_sts[i].emplace(x, y);
+            return false;
+          }
         }
       }
       return true;
     }
-    
+
     void revert_M() {
       while (!M_sts[level].empty()) {
         IndexG u;
@@ -196,8 +223,8 @@ void lazyforwardchecking_parent_ind(
         M_set(u, v);
       }
     }
-  } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
-  
+  } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
+
   e.explore();
 }
 
