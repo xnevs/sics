@@ -5,20 +5,23 @@
 #include <vector>
 #include <stack>
 
+#include "graph_traits.h"
+#include "label_equivalence.h"
+
 template <
     typename G,
     typename H,
-    typename VertexEquiv,
-    typename EdgeEquiv,
+    typename Callback,
     typename IndexOrderG,
-    typename Callback>
+    typename VertexEquiv = default_vertex_label_equiv<G, H>,
+    typename EdgeEquiv = default_edge_label_equiv<G, H>>
 void lazyforwardchecking_low_ind(
     G const & g,
     H const & h,
-    VertexEquiv const & vertex_equiv,
-    EdgeEquiv const & edge_equiv,
+    Callback const & callback,
     IndexOrderG const & index_order_g,
-    Callback const & callback) {
+    VertexEquiv const & vertex_equiv = VertexEquiv(),
+    EdgeEquiv const & edge_equiv = EdgeEquiv()) {
 
   using IndexG = typename G::index_type;
   using IndexH = typename H::index_type;
@@ -27,11 +30,12 @@ void lazyforwardchecking_low_ind(
 
     G const & g;
     H const & h;
-    VertexEquiv vertex_equiv;
-    EdgeEquiv edge_equiv;
-    IndexOrderG const & index_order_g;
     Callback callback;
 
+    IndexOrderG const & index_order_g;
+
+    vertex_equiv_helper<VertexEquiv> vertex_equiv;
+    edge_equiv_helper<EdgeEquiv> edge_equiv;
 
     IndexG m;
     IndexH n;
@@ -54,7 +58,7 @@ void lazyforwardchecking_low_ind(
     void build_M() {
       for (IndexG u=0; u<m; ++u) {
         for (IndexH v=0; v<n; ++v) {
-          if (vertex_equiv(u, v)) {
+          if (vertex_equiv(g, u, h, v)) {
             M_set(u, v);
           }
         }
@@ -65,16 +69,16 @@ void lazyforwardchecking_low_ind(
     explorer(
         G const & g,
         H const & h,
-        VertexEquiv const & vertex_equiv,
-        EdgeEquiv const & edge_equiv,
+        Callback const & callback,
         IndexOrderG const & index_order_g,
-        Callback const & callback)
+        VertexEquiv const & vertex_equiv,
+        EdgeEquiv const & edge_equiv)
         : g{g},
           h{h},
+          callback{callback},
+          index_order_g{index_order_g},
           vertex_equiv{vertex_equiv},
           edge_equiv{edge_equiv},
-          index_order_g{index_order_g},
-          callback{callback},
 
           m{g.num_vertices()},
           n{h.num_vertices()},
@@ -121,30 +125,22 @@ void lazyforwardchecking_low_ind(
         auto v = map[u];
         if (v == y) {
           M_unset(x, y);
-          M_sts[i].push({x, y});
+          M_sts[i].emplace(x, y);
           return false;
         }
         auto x_out = g.edge(x, u);
-        if (x_out != h.edge(y, v)) {
+        if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
           M_unset(x, y);
-          M_sts[i].push({x, y});
+          M_sts[i].emplace(x, y);
           return false;
         }
-        auto x_in = g.edge(u, x);
-        if (x_in != h.edge(v, y)) {
-          M_unset(x, y);
-          M_sts[i].push({x, y});
-          return false;
-        }
-        if (x_out && !edge_equiv(x, u, y, v)) {
-          M_unset(x, y);
-          M_sts[i].push({x, y});
-          return false;
-        }
-        if (x_in && !edge_equiv(u, x, v, y)) {
-          M_unset(x, y);
-          M_sts[i].push({x, y});
-          return false;
+        if constexpr (is_directed_v<G>) {
+          auto x_in = g.edge(u, x);
+          if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
+            M_unset(x, y);
+            M_sts[i].emplace(x, y);
+            return false;
+          }
         }
       }
       return true;
@@ -159,7 +155,7 @@ void lazyforwardchecking_low_ind(
         M_set(u, v);
       }
     }
-  } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
+  } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
 
   e.explore();
 }
