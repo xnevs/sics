@@ -41,6 +41,7 @@ int state_count = 0;
 #include "include/lazyforwardchecking_low_ind.h"
 #include "include/lazyforwardchecking_low_degreeprune_ind.h"
 #include "include/lazyforwardchecking_parent_ind.h"
+#include "include/lazyforwardchecking_parent_degreeprune_ind.h"
 
 #include "include/forwardchecking_mrv_degreeprune_ind.h"
 #include "include/forwardchecking_mrv_degreeprune_refine_ind.h"
@@ -62,7 +63,7 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  lazyforwardchecking_parent_ind(
+  lazyforwardchecking_parent_degreeprune_ind(
       g,
       h,
       [&count]() {++count; return true;},
