@@ -46,7 +46,7 @@ void conflictbackjumping_ind(
     std::vector<IndexH> map;
 
     IndexG backjump_level;
-    boost::dynamic_bitset<> conflicts;
+    std::vector<boost::dynamic_bitset<>> conflicts;
 
     explorer(
         G const & g,
@@ -67,18 +67,17 @@ void conflictbackjumping_ind(
           level{0},
           map(m, n),
           backjump_level{m},
-          conflicts(m) {
+          conflicts(m, boost::dynamic_bitset<>(m)) {
     }
 
     bool explore() {
       if (level == m) {
         backjump_level = m;
-        conflicts.set();
+        conflicts[m-1].set();
         return callback();
       } else {
         auto x = index_order_g[level];
-        conflicts.resize(level);
-        conflicts.resize(m);
+        conflicts[level].reset();
         backjump_level = level+1;
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
@@ -93,11 +92,15 @@ void conflictbackjumping_ind(
             }
           }
         }
-        auto pos = conflicts.find_next(m-1-level);
+        auto pos = conflicts[level].find_next(m-1-level);
         if (pos != boost::dynamic_bitset<>::npos) {
           backjump_level = m - pos;
         } else {
           backjump_level = 0;
+        }
+
+        if (backjump_level > 0) {
+          conflicts[backjump_level-1] |= conflicts[level];
         }
         return proceed;
       }
@@ -114,18 +117,18 @@ void conflictbackjumping_ind(
         auto u = index_order_g[i];
         auto v = map[u];
         if (v == y) {
-          conflicts.set(m-1-i);
+          conflicts[level].set(m-1-i);
           return false;
         }
         auto x_out = g.edge(x, u);
         if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
-          conflicts.set(m-1-i);
+          conflicts[level].set(m-1-i);
           return false;
         }
         if constexpr (is_directed_v<G>) {
           auto x_in = g.edge(u, x);
           if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
-            conflicts.set(m-1-i);
+            conflicts[level].set(m-1-i);
             return false;
           }
         }
