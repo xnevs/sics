@@ -11,6 +11,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -241,5 +243,7 @@ void lazyforwardchecking_low_parent_degreeprune_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_LAZYFORWARDCHECKING_LOW_PARENT_DEGREEPRUNE_IND_H_

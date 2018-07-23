@@ -50,8 +50,9 @@
 #include "include/forwardchecking_mrv_degreeprune_ind.h"
 #include "include/forwardchecking_mrv_degreeprune_refine_ind.h"
 
-
 int main(int argc, char * argv[]) {
+  using namespace sics;
+
   char const * g_filename = argv[1];
   char const * h_filename = argv[2];
 

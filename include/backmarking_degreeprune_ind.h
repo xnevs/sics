@@ -10,6 +10,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -151,5 +153,7 @@ void backmarking_degreeprune_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_BACKMARKING_DEGREEPRUNE_IND_H_

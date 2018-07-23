@@ -11,6 +11,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -142,5 +144,7 @@ void conflictbackjumping_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_CONFLICTBACKJUMPING_IND_H_

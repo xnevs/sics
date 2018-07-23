@@ -3,6 +3,8 @@
 
 #include <istream>
 
+namespace sics {
+
 template <typename G>
 G read_galve(std::istream & in) {
   using index_type = typename G::index_type;
@@ -29,5 +31,7 @@ G read_galve(std::istream & in) {
   }
   return g;
 }
+
+}  // namespace sics
 
 #endif  // SICS_READ_GALVE_H_

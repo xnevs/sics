@@ -12,6 +12,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -268,5 +270,7 @@ void backtracking_parent_forwardcount_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_BACKTRACKING_PARENT_FORWARDCOUNT_IND_H_

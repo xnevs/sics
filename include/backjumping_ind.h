@@ -9,6 +9,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -132,5 +134,7 @@ void backjumping_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_BACKJUMPING_IND_H_

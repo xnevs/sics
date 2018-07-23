@@ -3,6 +3,8 @@
 
 #include <type_traits>
 
+namespace sics {
+
 struct directed_category_tag {};
 struct directed_tag : public directed_category_tag {};
 struct undirected_tag : public directed_category_tag {};
@@ -42,5 +44,7 @@ struct is_edge_labelled {
   static constexpr bool value = ! std::is_same<void, edge_label_type>::value;
 };
 template <typename G> inline constexpr bool is_edge_labelled_v = is_edge_labelled<G>::value;
+
+}  // namespace sics
 
 #endif  // SICS_GRAPH_TRAITS_H_

@@ -10,6 +10,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -170,5 +172,7 @@ void forwardchecking_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_FORWARDCHECKING_IND_H_

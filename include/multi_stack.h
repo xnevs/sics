@@ -4,6 +4,8 @@
 #include <iterator>
 #include <vector>
 
+namespace sics {
+
 template <typename T>
 class multi_stack {
  public:
@@ -65,5 +67,7 @@ class multi_stack {
   }
 
 };
+
+}  // namespace sics
 
 #endif  // SICS_MULTI_STACK_H_

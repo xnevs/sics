@@ -3,6 +3,8 @@
 
 #include "graph_traits.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -380,5 +382,7 @@ struct edge_equiv_helper {
         hf.target, v1);
   }
 };
+
+}  // namespace sics
 
 #endif  // SICS_LABEL_EQUIVALENCE_H_

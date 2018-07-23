@@ -6,6 +6,8 @@
 #include <istream>
 #include <string>
 
+namespace sics {
+
 template <typename G>
 G read_ldgraphs_unl(std::istream & in) {
   using index_type = typename G::index_type;
@@ -62,5 +64,7 @@ G read_ldgraphs_lab(std::istream & in) {
   }
   return g;
 }
+
+}  // namespace sics
 
 #endif  // SICS_READ_LDGRAPHS_H_

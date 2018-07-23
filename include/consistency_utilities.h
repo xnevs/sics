@@ -7,6 +7,7 @@
 #include "graph_traits.h"
 #include "graph_utilities.h"
 
+namespace sics {
 
 template <
     typename G,
@@ -150,5 +151,7 @@ bool degree_condition(
     return g.degree(u) <= h.degree(v);
   }
 }
+
+}  // namespace sics
 
 #endif  // SICS_CONSISTENCY_UTILITIES_H_

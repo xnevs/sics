@@ -10,6 +10,8 @@
 #include "graph_traits.h"
 #include "graph_utilities.h"
 
+namespace sics {
+
 template <typename G>
 std::vector<typename G::index_type> vertex_order_DEG(G const & g) {
   std::vector<typename G::index_type> order(g.num_vertices());
@@ -145,5 +147,7 @@ std::vector<typename G::index_type> vertex_order_GreatestConstraintFirst(G const
   }
   return vertex_order;
 }
+
+}  // namespace sics
 
 #endif  // SICS_VERTEX_ORDER_H_

@@ -12,6 +12,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -176,5 +178,7 @@ void backtracking_degreeprune_adjacentconsistency_forwardcount_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_BACKTRACKING_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_

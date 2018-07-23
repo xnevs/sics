@@ -9,6 +9,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -150,5 +152,7 @@ void backmarking_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_BACKMARKING_IND_H_

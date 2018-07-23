@@ -9,6 +9,8 @@
 
 #include "graph_traits.h"
 
+namespace sics {
+
 template <typename Index, typename Label=void>
 struct half_edge : public half_edge<Index, void> {
   Label label;
@@ -432,5 +434,7 @@ class adjacency_list<Index, undirected_tag, void, void> {
     return it != std::cend(m_edges[u]);
   }
 };
+
+}  // namespace sics
 
 #endif  // SICS_ADJACENCY_LIST_H_

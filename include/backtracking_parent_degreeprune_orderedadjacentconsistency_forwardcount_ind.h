@@ -4,6 +4,8 @@
 #include <iterator>
 #include <vector>
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -202,5 +204,7 @@ void backtracking_parent_degreeprune_orderedadjacentconsistency_forwardcount_ind
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_BACKTRACKING_PARENT_DEGREEPRUNE_ORDEREDADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_

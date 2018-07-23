@@ -11,6 +11,8 @@
 
 #include "stats.h"
 
+namespace sics {
+
 template <
     typename G,
     typename H,
@@ -183,5 +185,7 @@ void forwardchecking_mrv_degreeprune_ind(
 
   e.explore();
 }
+
+}  // namespace sics
 
 #endif  // SICS_FORWARDCHECKING_MRV_DEGREEPRUNE_IND_H_

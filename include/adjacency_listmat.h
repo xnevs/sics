@@ -8,6 +8,8 @@
 #include "graph_traits.h"
 #include "adjacency_list.h"
 
+namespace sics {
+
 template <
     typename Index,
     typename DirectedCategory,
@@ -112,5 +114,7 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
     }
   }
 };
+
+}  // namespace sics
 
 #endif  // SICS_ADJACENCY_LISTMAT_H_
