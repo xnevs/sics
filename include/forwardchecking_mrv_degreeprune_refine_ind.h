@@ -7,6 +7,7 @@
 
 #include "graph_traits.h"
 #include "label_equivalence.h"
+#include "consistency_utilities.h"
 #include "multi_stack.h"
 
 #include "stats.h"
