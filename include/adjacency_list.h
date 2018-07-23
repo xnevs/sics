@@ -1,5 +1,5 @@
-#ifndef GMCS_ADJACENCY_LIST_H_
-#define GMCS_ADJACENCY_LIST_H_
+#ifndef SICS_ADJACENCY_LIST_H_
+#define SICS_ADJACENCY_LIST_H_
 
 #include <algorithm>
 #include <vector>
@@ -433,4 +433,4 @@ class adjacency_list<Index, undirected_tag, void, void> {
   }
 };
 
-#endif  // GMCS_ADJACENCY_LIST_H_
+#endif  // SICS_ADJACENCY_LIST_H_

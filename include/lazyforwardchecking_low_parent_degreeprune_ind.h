@@ -1,5 +1,5 @@
-#ifndef GMCS_LAZYFORWARDCHECKING_LOW_PARENT_DEGREEPRUNE_IND_H_
-#define GMCS_LAZYFORWARDCHECKING_LOW_PARENT_DEGREEPRUNE_IND_H_
+#ifndef SICS_LAZYFORWARDCHECKING_LOW_PARENT_DEGREEPRUNE_IND_H_
+#define SICS_LAZYFORWARDCHECKING_LOW_PARENT_DEGREEPRUNE_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -8,6 +8,8 @@
 #include "graph_traits.h"
 #include "label_equivalence.h"
 #include "consistency_utilities.h"
+
+#include "stats.h"
 
 template <
     typename G,
@@ -133,6 +135,7 @@ void lazyforwardchecking_low_parent_degreeprune_ind(
     }
 
     bool explore() {
+      SICS_STATS_STATE;
       if (level == m) {
         return callback();
       } else {
@@ -239,4 +242,4 @@ void lazyforwardchecking_low_parent_degreeprune_ind(
   e.explore();
 }
 
-#endif  // GMCS_LAZYFORWARDCHECKING_LOW_PARENT_DEGREEPRUNE_IND_H_
+#endif  // SICS_LAZYFORWARDCHECKING_LOW_PARENT_DEGREEPRUNE_IND_H_

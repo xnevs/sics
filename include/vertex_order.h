@@ -1,5 +1,5 @@
-#ifndef GMCS_VERTEX_ORDER_H_
-#define GMCS_VERTEX_ORDER_H_
+#ifndef SICS_VERTEX_ORDER_H_
+#define SICS_VERTEX_ORDER_H_
 
 #include <algorithm>
 #include <numeric>
@@ -146,4 +146,4 @@ std::vector<typename G::index_type> vertex_order_GreatestConstraintFirst(G const
   return vertex_order;
 }
 
-#endif  // GMCS_VERTEX_ORDER_H_
+#endif  // SICS_VERTEX_ORDER_H_

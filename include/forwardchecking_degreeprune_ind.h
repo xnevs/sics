@@ -1,5 +1,5 @@
-#ifndef GMCS_FORWARDCHECKING_DEGREEPRUNE_IND_H_
-#define GMCS_FORWARDCHECKING_DEGREEPRUNE_IND_H_
+#ifndef SICS_FORWARDCHECKING_DEGREEPRUNE_IND_H_
+#define SICS_FORWARDCHECKING_DEGREEPRUNE_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -7,6 +7,8 @@
 #include "graph_traits.h"
 #include "label_equivalence.h"
 #include "multi_stack.h"
+
+#include "stats.h"
 
 template <
     typename G,
@@ -90,6 +92,7 @@ void forwardchecking_degreeprune_ind(
     }
 
     bool explore() {
+      SICS_STATS_STATE;
       if (level == m) {
         return callback();
       } else {
@@ -154,7 +157,7 @@ void forwardchecking_degreeprune_ind(
           }
         }
       }
-      return not_empty;
+      return true;//not_empty;
     }
 
     void revert_M() {
@@ -169,4 +172,4 @@ void forwardchecking_degreeprune_ind(
   e.explore();
 }
 
-#endif  // GMCS_FORWARDCHECKING_DEGREEPRUNE_IND_H_
+#endif  // SICS_FORWARDCHECKING_DEGREEPRUNE_IND_H_

@@ -1,5 +1,5 @@
-#ifndef GMCS_CONFLICTBACKJUMPING_IND_H_
-#define GMCS_CONFLICTBACKJUMPING_IND_H_
+#ifndef SICS_CONFLICTBACKJUMPING_IND_H_
+#define SICS_CONFLICTBACKJUMPING_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -8,6 +8,8 @@
 
 #include "graph_traits.h"
 #include "label_equivalence.h"
+
+#include "stats.h"
 
 template <
     typename G,
@@ -71,6 +73,7 @@ void conflictbackjumping_ind(
     }
 
     bool explore() {
+      SICS_STATS_STATE;
       if (level == m) {
         backjump_level = m;
         conflicts[m-1].set();
@@ -140,4 +143,4 @@ void conflictbackjumping_ind(
   e.explore();
 }
 
-#endif  // GMCS_CONFLICTBACKJUMPING_IND_H_
+#endif  // SICS_CONFLICTBACKJUMPING_IND_H_

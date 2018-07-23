@@ -1,5 +1,5 @@
-#ifndef GMCS_READ_GALV_H_
-#define GMCS_READ_GALV_H_
+#ifndef SICS_READ_GALV_H_
+#define SICS_READ_GALV_H_
 
 #include <istream>
 
@@ -28,4 +28,4 @@ G read_galv(std::istream & in) {
   return g;
 }
 
-#endif  // GMCS_READ_GALV_H_
+#endif  // SICS_READ_GALV_H_

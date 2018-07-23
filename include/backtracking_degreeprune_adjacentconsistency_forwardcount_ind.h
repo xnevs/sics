@@ -1,5 +1,5 @@
-#ifndef GMCS_BACKTRACKING_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
-#define GMCS_BACKTRACKING_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#ifndef SICS_BACKTRACKING_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#define SICS_BACKTRACKING_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
 
 #include <iterator>
 #include <tuple>
@@ -9,6 +9,8 @@
 #include "graph_utilities.h"
 #include "label_equivalence.h"
 #include "consistency_utilities.h"
+
+#include "stats.h"
 
 template <
     typename G,
@@ -106,6 +108,7 @@ void backtracking_degreeprune_adjacentconsistency_forwardcount_ind(
     }
 
     bool explore() {
+      SICS_STATS_STATE;
       if (x_it == std::cend(index_order_g)) {
         return callback();
       } else {
@@ -174,4 +177,4 @@ void backtracking_degreeprune_adjacentconsistency_forwardcount_ind(
   e.explore();
 }
 
-#endif  // GMCS_BACKTRACKING_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#endif  // SICS_BACKTRACKING_DEGREEPRUNE_ADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_

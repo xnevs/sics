@@ -1,5 +1,5 @@
-#ifndef GMCS_CONSISTENCY_UTILITIES_H_
-#define GMCS_CONSISTENCY_UTILITIES_H_
+#ifndef SICS_CONSISTENCY_UTILITIES_H_
+#define SICS_CONSISTENCY_UTILITIES_H_
 
 #include <optional>
 #include <tuple>
@@ -151,4 +151,4 @@ bool degree_condition(
   }
 }
 
-#endif  // GMCS_CONSISTENCY_UTILITIES_H_
+#endif  // SICS_CONSISTENCY_UTILITIES_H_

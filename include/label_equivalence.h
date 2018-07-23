@@ -1,5 +1,5 @@
-#ifndef GMCS_LABEL_EQUIVALENCE_H_
-#define GMCS_LABEL_EQUIVALENCE_H_
+#ifndef SICS_LABEL_EQUIVALENCE_H_
+#define SICS_LABEL_EQUIVALENCE_H_
 
 #include "graph_traits.h"
 
@@ -381,4 +381,4 @@ struct edge_equiv_helper {
   }
 };
 
-#endif  // GMCS_LABEL_EQUIVALENCE_H_
+#endif  // SICS_LABEL_EQUIVALENCE_H_

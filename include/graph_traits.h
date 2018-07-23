@@ -1,5 +1,5 @@
-#ifndef GMCS_GRAPH_TRAITS_H_
-#define GMCS_GRAPH_TRAITS_H_
+#ifndef SICS_GRAPH_TRAITS_H_
+#define SICS_GRAPH_TRAITS_H_
 
 #include <type_traits>
 
@@ -43,4 +43,4 @@ struct is_edge_labelled {
 };
 template <typename G> inline constexpr bool is_edge_labelled_v = is_edge_labelled<G>::value;
 
-#endif  // GMCS_GRAPH_TRAITS_H_
+#endif  // SICS_GRAPH_TRAITS_H_

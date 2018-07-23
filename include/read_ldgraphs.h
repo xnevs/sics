@@ -1,5 +1,5 @@
-#ifndef GMCS_READ_LDGRAPHS_H_
-#define GMCS_READ_LDGRAPHS_H_
+#ifndef SICS_READ_LDGRAPHS_H_
+#define SICS_READ_LDGRAPHS_H_
 
 #include <cstdint>
 
@@ -63,4 +63,4 @@ G read_ldgraphs_lab(std::istream & in) {
   return g;
 }
 
-#endif  // GMCS_READ_LDGRAPHS_H_
+#endif  // SICS_READ_LDGRAPHS_H_

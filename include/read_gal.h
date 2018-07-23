@@ -1,5 +1,5 @@
-#ifndef GMCS_READ_GAL_H_
-#define GMCS_READ_GAL_H_
+#ifndef SICS_READ_GAL_H_
+#define SICS_READ_GAL_H_
 
 #include <istream>
 
@@ -24,4 +24,4 @@ G read_gal(std::istream & in) {
   return g;
 }
 
-#endif  // GMCS_READ_GAL_H_
+#endif  // SICS_READ_GAL_H_

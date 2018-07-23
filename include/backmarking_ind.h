@@ -1,8 +1,13 @@
-#ifndef GMCS_BACKMARKING_IND_H_
-#define GMCS_BACKMARKING_IND_H_
+#ifndef SICS_BACKMARKING_IND_H_
+#define SICS_BACKMARKING_IND_H_
 
 #include <iterator>
 #include <vector>
+
+#include "graph_traits.h"
+#include "label_equivalence.h"
+
+#include "stats.h"
 
 template <
     typename G,
@@ -83,6 +88,7 @@ void backmarking_ind(
     }
 
     bool explore() {
+      SICS_STATS_STATE;
       if (level == m) {
         return callback();
       } else {
@@ -145,4 +151,4 @@ void backmarking_ind(
   e.explore();
 }
 
-#endif  // GMCS_BACKMARKING_IND_H_
+#endif  // SICS_BACKMARKING_IND_H_

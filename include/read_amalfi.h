@@ -1,5 +1,5 @@
-#ifndef GMCS_READ_AMALFI_H_
-#define GMCS_READ_AMALFI_H_
+#ifndef SICS_READ_AMALFI_H_
+#define SICS_READ_AMALFI_H_
 
 #include <cstdint>
 
@@ -25,4 +25,4 @@ G read_amalfi(std::istream & in) {
   return g;
 }
 
-#endif  // GMCS_READ_AMALFI_H_
+#endif  // SICS_READ_AMALFI_H_

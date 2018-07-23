@@ -1,5 +1,5 @@
-#ifndef GMCS_BACKTRACKING_PARENT_ORDEREDADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
-#define GMCS_BACKTRACKING_PARENT_ORDEREDADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#ifndef SICS_BACKTRACKING_PARENT_ORDEREDADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#define SICS_BACKTRACKING_PARENT_ORDEREDADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -18,28 +18,28 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
     EdgeEquiv const & edge_equiv,
     IndexOrderG const & index_order_g,
     Callback const & callback) {
-    
+
   using IndexG = typename G::index_type;
   using IndexH = typename H::index_type;
-  
+
   struct explorer {
-  
+
     G const & g;
     H const & h;
     VertexEquiv vertex_equiv;
     EdgeEquiv edge_equiv;
     IndexOrderG const & index_order_g;
     Callback callback;
-    
-  
+
+
     IndexG m;
     IndexH n;
-    
+
     typename IndexOrderG::const_iterator x_it;
 
     std::vector<IndexH> map;
     std::vector<IndexG> inv;
-    
+
     typename H::adjacent_vertices_container_type h_vertices;
     using adjacent_vertices_range_type = boost::iterator_range<typename H::adjacent_vertices_container_type::const_iterator>;
     adjacent_vertices_range_type h_vertices_range;
@@ -62,7 +62,7 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
         }
       }
     }
-    
+
     std::vector<IndexG> g_out_count;
     std::vector<IndexG> g_in_count;
     std::vector<IndexH> h_out_count;
@@ -82,7 +82,7 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
         }
       }
     }
-    
+
     explorer(
         G const & g,
         H const & h,
@@ -96,7 +96,7 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
           edge_equiv{edge_equiv},
           index_order_g{index_order_g},
           callback{callback},
-          
+
           m{g.num_vertices()},
           n{h.num_vertices()},
           x_it(std::cbegin(index_order_g)),
@@ -113,7 +113,7 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
       build_parents();
       build_g_count();
     }
-    
+
     bool explore() {
       if (x_it == std::cend(index_order_g)) {
         return callback();
@@ -143,7 +143,7 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
         return proceed;
       }
     }
-    
+
     adjacent_vertices_range_type get_candidates(IndexG u) {
       IndexG parent;
       bool out;
@@ -158,7 +158,7 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
         return h_vertices_range;
       }
     }
-    
+
     bool topology_consistency(IndexG u, IndexH v) {
       for (auto i : g.adjacent_vertices_before(u)) {
         auto j = map[i];
@@ -178,7 +178,7 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
       }
       return true;
     }
-    
+
     void update_h_count(IndexH v) {
       for (auto j : h.adjacent_vertices(v)) {
         ++h_in_count[j];
@@ -187,7 +187,7 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
         ++h_out_count[j];
       }
     }
-    
+
     void revert_h_count(IndexH v) {
       for (auto j : h.adjacent_vertices(v)) {
         --h_in_count[j];
@@ -197,8 +197,8 @@ void backtracking_parent_orderedadjacentconsistency_forwardcount_ind(
       }
     }
   } e(g, h, vertex_equiv, edge_equiv, index_order_g, callback);
-  
+
   e.explore();
 }
 
-#endif  // GMCS_BACKTRACKING_PARENT_ORDEREDADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_
+#endif  // SICS_BACKTRACKING_PARENT_ORDEREDADJACENTCONSISTENCY_FORWARDCOUNT_IND_H_

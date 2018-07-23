@@ -1,11 +1,13 @@
-#ifndef GMCS_BACKJUMPING_IND_H_
-#define GMCS_BACKJUMPING_IND_H_
+#ifndef SICS_BACKJUMPING_IND_H_
+#define SICS_BACKJUMPING_IND_H_
 
 #include <iterator>
 #include <vector>
 
 #include "graph_traits.h"
 #include "label_equivalence.h"
+
+#include "stats.h"
 
 template <
     typename G,
@@ -68,6 +70,7 @@ void backjumping_ind(
     }
 
     bool explore() {
+      SICS_STATS_STATE;
       if (x_it == std::cend(index_order_g)) {
         return callback();
       } else {
@@ -130,4 +133,4 @@ void backjumping_ind(
   e.explore();
 }
 
-#endif  // GMCS_BACKJUMPING_IND_H_
+#endif  // SICS_BACKJUMPING_IND_H_

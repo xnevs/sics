@@ -11,12 +11,9 @@
 
 #include "include/vertex_order.h"
 
-int state_count = 0;
+#include "include/stats.h"
 
 #include "include/backtracking_ind.h"
-#include "include/backjumping_ind.h"
-#include "include/backmarking_ind.h"
-#include "include/backmarking_degreeprune_ind.h"
 #include "include/backtracking_degreeprune_ind.h"
 #include "include/backtracking_adjacentconsistency_ind.h"
 #include "include/backtracking_degreeprune_adjacentconsistency_ind.h"
@@ -34,6 +31,11 @@ int state_count = 0;
 #include "include/backtracking_degreeprune_adjacentconsistency_precount_ind.h"
 #include "include/backtracking_parent_adjacentconsistency_precount_ind.h"
 #include "include/backtracking_parent_degreeprune_adjacentconsistency_precount_ind.h"
+#include "include/backjumping_ind.h"
+#include "include/conflictbackjumping_ind.h"
+#include "include/conflictbackjumping_degreeprune_ind.h"
+#include "include/backmarking_ind.h"
+#include "include/backmarking_degreeprune_ind.h"
 #include "include/forwardchecking_ind.h"
 #include "include/forwardchecking_degreeprune_ind.h"
 #include "include/lazyforwardchecking_ind.h"
@@ -48,8 +50,6 @@ int state_count = 0;
 #include "include/forwardchecking_mrv_degreeprune_ind.h"
 #include "include/forwardchecking_mrv_degreeprune_refine_ind.h"
 
-#include "include/conflictbackjumping_ind.h"
-#include "include/conflictbackjumping_degreeprune_ind.h"
 
 int main(int argc, char * argv[]) {
   char const * g_filename = argv[1];
@@ -65,12 +65,13 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  lazyforwardchecking_low_parent_ind(
+  lazyforwardchecking_low_parent_degreeprune_ind(
       g,
       h,
       [&count]() {++count; return true;},
       index_order_g);
 
   std::cout << count << std::endl;
-  std::cout << state_count << std::endl;
+
+  SICS_STATS_PRINT(std::cout);
 }

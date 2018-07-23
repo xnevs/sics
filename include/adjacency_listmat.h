@@ -1,5 +1,5 @@
-#ifndef GMCS_ADJACENCY_LISTMAT_H_
-#define GMCS_ADJACENCY_LISTMAT_H_
+#ifndef SICS_ADJACENCY_LISTMAT_H_
+#define SICS_ADJACENCY_LISTMAT_H_
 
 #include <vector>
 
@@ -113,4 +113,4 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
   }
 };
 
-#endif  // GMCS_ADJACENCY_LISTMAT_H_
+#endif  // SICS_ADJACENCY_LISTMAT_H_
