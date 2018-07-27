@@ -2,10 +2,12 @@
 
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include <sics/read_gal.h>
 #include <sics/read_amalfi.h>
 #include <sics/read_ldgraphs.h>
+#include <sics/read_gf.h>
 
 #include <sics/adjacency_listmat.h>
 
@@ -57,20 +59,20 @@ int main(int argc, char * argv[]) {
   char const * h_filename = argv[2];
 
   std::ifstream in{g_filename,std::ios::in|std::ios::binary};
-  auto g = read_gal<adjacency_listmat<uint16_t, undirected_tag>>(in);
+  auto g = read_gf<adjacency_listmat<uint16_t, undirected_tag, std::string>>(in);
   in.close();
   in.open(h_filename,std::ios::in|std::ios::binary);
-  auto h = read_gal<adjacency_listmat<uint16_t, undirected_tag>>(in);
+  auto h = read_gf<adjacency_listmat<uint16_t, undirected_tag, std::string>>(in);
   in.close();
 
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  backmarking_degreeprune_ind(
+  forwardchecking_mrv_degreeprune_ind(
       g,
       h,
-      [&count]() {++count; return true;},
-      index_order_g);
+      [&count]() {++count; return true;}/*,
+      index_order_g*/);
 
   std::cout << count << std::endl;
 
