@@ -43,12 +43,12 @@ void forwardchecking_bitset_mrv_degreeprune_ind(
 
     IndexG m;
     IndexH n;
-    
+
     using bits_type = std::conditional_t<
         is_directed_v<H>,
         std::tuple<boost::dynamic_bitset<>, boost::dynamic_bitset<>>,
         std::tuple<boost::dynamic_bitset<>>>;
-    
+
     std::vector<bits_type> h_bits;
     std::vector<bits_type> h_c_bits;
     void build_h_bits() {
@@ -60,7 +60,7 @@ void forwardchecking_bitset_mrv_degreeprune_ind(
           std::get<1>(h_c_bits[i]).resize(n);
         }
       }
-      
+
       for (IndexH i=0; i<n; ++i) {
         for (IndexH j=0; j<n; ++j) {
           if (h.edge(i, j)) {
@@ -77,13 +77,13 @@ void forwardchecking_bitset_mrv_degreeprune_ind(
         }
       }
     }
-    
+
     IndexG level;
 
     std::vector<IndexG> index_order_g;
 
     std::vector<IndexH> map;
-    
+
     std::vector<boost::dynamic_bitset<>> M;
     void build_M() {
       for (IndexG u=0; u<m; ++u) {
@@ -162,16 +162,16 @@ void forwardchecking_bitset_mrv_degreeprune_ind(
       bool not_empty = true;
       for (IndexG i=level+1; i<m && not_empty; ++i) {
         auto u = index_order_g[i];
-        
+
         M_mst.push({u, M[u]});
-        
+
         M[u].reset(y);
         if (g.edge(x, u)) {
           M[u] &= std::get<0>(h_bits[y]);
         } else {
           M[u] &= std::get<0>(h_c_bits[y]);
         }
-        
+
         if constexpr (is_directed_v<G>) {
           if (g.edge(u, x)) {
             M[u] &= std::get<1>(h_bits[y]);
@@ -179,7 +179,7 @@ void forwardchecking_bitset_mrv_degreeprune_ind(
             M[u] &= std::get<1>(h_c_bits[y]);
           }
         }
-        
+
         not_empty = M[u].any();
       }
       return not_empty;
