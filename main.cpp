@@ -55,6 +55,7 @@
 #include <sics/lazyforwardchecking_mrv_ind.h>
 #include <sics/forwardchecking_bitset_mrv_degreeprune_ind.h>
 #include <sics/forwardchecking_bitset_mrv_degreeprune_ac1_ind.h>
+#include <sics/forwardchecking_bitset_mrv_degreeprune_countingalldifferent_ind.h>
 
 int main(int argc, char * argv[]) {
   using namespace sics;
@@ -72,7 +73,7 @@ int main(int argc, char * argv[]) {
   //auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  forwardchecking_bitset_mrv_degreeprune_ac1_ind(
+  forwardchecking_bitset_mrv_degreeprune_countingalldifferent_ind(
       g,
       h,
       [&count]() {++count; return true;}/*,
