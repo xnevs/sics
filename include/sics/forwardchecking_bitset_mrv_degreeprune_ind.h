@@ -2,6 +2,7 @@
 #define SICS_FORWARDCHECKING_BITSET_MRV_DEGREEPRUNE_IND_H_
 
 #include <iterator>
+#include <tuple>
 #include <numeric>
 #include <vector>
 
@@ -132,7 +133,7 @@ void forwardchecking_bitset_mrv_degreeprune_ind(
             std::next(index_order_g.begin(), level),
             index_order_g.end(),
             [this](auto a, auto b) {
-              return M[a].count() < M[b].count();
+              return std::forward_as_tuple(M[a].count(), g.degree(a), a) < std::forward_as_tuple(M[b].count(), g.degree(b), b);
             });
         std::swap(index_order_g[level], *it);
         auto x = index_order_g[level];

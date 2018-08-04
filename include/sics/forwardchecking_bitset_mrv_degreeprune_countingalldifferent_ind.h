@@ -2,6 +2,7 @@
 #define SICS_FORWARDCHECKING_BITSET_MRV_DEGREEPRUNE_COUNTINGALLDIFFERENT_IND_H_
 
 #include <iterator>
+#include <tuple>
 #include <numeric>
 #include <vector>
 
@@ -136,13 +137,20 @@ void forwardchecking_bitset_mrv_degreeprune_countingalldifferent_ind(
       if (level == m) {
         return callback();
       } else {
+        auto it = std::min_element(
+            std::next(index_order_g.begin(), level),
+            index_order_g.end(),
+            [this](auto a, auto b) {
+              return std::forward_as_tuple(M[a].count(), g.degree(a), a) < std::forward_as_tuple(M[b].count(), g.degree(b), b);
+            });
+        std::swap(index_order_g[level], *it);
         auto x = index_order_g[level];
         bool proceed = true;
         for (auto y=M[x].find_first(); y!=boost::dynamic_bitset<>::npos; y=M[x].find_next(y)) {
           M_mst.push_level();
           if (forward_check(y) &&
               (std::sort(std::next(index_order_g.begin(), level+1), index_order_g.end(), [this](auto a, auto b) {
-                return M[a].count() < M[b].count();
+                return std::forward_as_tuple(M[a].count(), g.degree(a), a) < std::forward_as_tuple(M[b].count(), g.degree(b), b);
               }), counting_all_different())) {
             map[x] = y;
             ++level;

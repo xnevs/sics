@@ -2,6 +2,7 @@
 #define SICS_FORWARDCHECKING_MRV_DEGREEPRUNE_IND_H_
 
 #include <iterator>
+#include <tuple>
 #include <numeric>
 #include <vector>
 
@@ -105,7 +106,7 @@ void forwardchecking_mrv_degreeprune_ind(
             std::next(index_order_g.begin(), level),
             index_order_g.end(),
             [this](auto a, auto b) {
-              return num_candidates[a] < num_candidates[b];
+              return std::forward_as_tuple(num_candidates[a], g.degree(a), a) < std::forward_as_tuple(num_candidates[b], g.degree(b), b);
             });
         std::swap(index_order_g[level], *it);
         auto x = index_order_g[level];

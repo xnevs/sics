@@ -50,7 +50,7 @@ class adjacency_listmat<Index, DirectedCategory, VertexLabel, void>
   explicit adjacency_listmat(G const & g)
       : base(g),
         n{base::num_vertices()},
-        m_mat((n * (n+1)) / 2, false){
+        m_mat((n * (n+1)) / 2, false) {
     for (typename base::index_type u=0; u<n; ++u) {
       for (auto e : g.edges(u)) {
         auto v = e.target;

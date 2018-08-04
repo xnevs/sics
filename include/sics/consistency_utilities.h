@@ -152,6 +152,46 @@ bool degree_condition(
   }
 }
 
+template <typename G, typename H>
+bool degree_sequence_condition(
+    G const & g,
+    typename G::index_type u,
+    H const & h,
+    typename H::index_type v) {
+  if constexpr (is_directed_v<G>) {
+    auto u_out = g.out_edges(u);
+    auto v_out = h.out_edges(v);
+    for (typename G::index_type i=0; i<g.out_degree(u); ++i) {
+      auto ui = u_out[i].target;
+      auto vi = v_out[i].target;
+      if (g.degree(ui) > h.degree(vi)) {
+        //return false;
+      }
+    }
+    auto u_in = g.in_edges(u);
+    auto v_in = h.in_edges(v);
+    for (typename G::index_type i=0; i<g.in_degree(u); ++i) {
+      auto ui = u_in[i].target;
+      auto vi = v_in[i].target;
+      if (g.degree(ui) > h.degree(vi)) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    auto u_edges = g.edges(u);
+    auto v_edges = h.edges(v);
+    for (typename G::index_type i=0; i<g.degree(u); ++i) {
+      auto ui = u_edges[i].target;
+      auto vi = v_edges[i].target;
+      if (g.degree(ui) > h.degree(vi)) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
 }  // namespace sics
 
 #endif  // SICS_CONSISTENCY_UTILITIES_H_

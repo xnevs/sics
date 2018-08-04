@@ -1,17 +1,18 @@
-#ifndef SICS_FORWARDCHECKING_BITSET_MRV_DEGREEPRUNE_AC1_IND_H_
-#define SICS_FORWARDCHECKING_BITSET_MRV_DEGREEPRUNE_AC1_IND_H_
+#ifndef SICS_FORWARDCHECKING_BITSET_MRV_DEGREESEQUENCEPRUNE_IND_H_
+#define SICS_FORWARDCHECKING_BITSET_MRV_DEGREESEQUENCEPRUNE_IND_H_
 
 #include <iterator>
 #include <tuple>
 #include <numeric>
 #include <vector>
-#include <stack>
 
 #include <boost/dynamic_bitset.hpp>
 
+#include "adjacency_degreesortedlistmat.h"
 #include "graph_traits.h"
 #include "label_equivalence.h"
 #include "consistency_utilities.h"
+#include "multi_stack.h"
 
 #include "stats.h"
 
@@ -23,7 +24,7 @@ template <
     typename Callback,
     typename VertexEquiv = default_vertex_label_equiv<G, H>,
     typename EdgeEquiv = default_edge_label_equiv<G, H>>
-void forwardchecking_bitset_mrv_degreeprune_ac1_ind(
+void forwardchecking_bitset_mrv_degreesequenceprune_ind(
     G const & g,
     H const & h,
     Callback const & callback,
@@ -35,8 +36,17 @@ void forwardchecking_bitset_mrv_degreeprune_ac1_ind(
 
   struct explorer {
 
-    G const & g;
-    H const & h;
+    adjacency_degreesortedlistmat<
+        IndexG,
+        typename G::directed_category,
+        typename G::vertex_label_type,
+        typename G::edge_label_type> g;
+    adjacency_degreesortedlistmat<
+        IndexH,
+        typename H::directed_category,
+        typename H::vertex_label_type,
+        typename H::edge_label_type> h;
+
     Callback callback;
 
     vertex_equiv_helper<VertexEquiv> vertex_equiv;
@@ -90,14 +100,14 @@ void forwardchecking_bitset_mrv_degreeprune_ac1_ind(
       for (IndexG u=0; u<m; ++u) {
         for (IndexH v=0; v<n; ++v) {
           if (vertex_equiv(g, u, h, v) &&
-              degree_condition(g, u, h, v)) {
+              degree_condition(g, u, h, v) &&
+              degree_sequence_condition(g, u, h, v)) {
             M[u].set(v);
           }
         }
       }
-      ac1();
     }
-    std::stack<std::vector<boost::dynamic_bitset<>>> M_st;
+    multi_stack<std::tuple<IndexG, boost::dynamic_bitset<>>> M_mst;
 
     explorer(
         G const & g,
@@ -118,7 +128,8 @@ void forwardchecking_bitset_mrv_degreeprune_ac1_ind(
           level{0},
           index_order_g(m),
           map(m, n),
-          M(m, boost::dynamic_bitset<>(n)) {
+          M(m, boost::dynamic_bitset<>(n)),
+          M_mst(m*n, m) {
       build_h_bits();
       std::iota(index_order_g.begin(), index_order_g.end(), 0);
       build_M();
@@ -139,16 +150,16 @@ void forwardchecking_bitset_mrv_degreeprune_ac1_ind(
         auto x = index_order_g[level];
         bool proceed = true;
         for (auto y=M[x].find_first(); y!=boost::dynamic_bitset<>::npos; y=M[x].find_next(y)) {
-          M_st.push(M);
-          if (forward_check(y) && ac1()) {
+          M_mst.push_level();
+          if (forward_check(y)) {
             map[x] = y;
             ++level;
             proceed = explore();
             --level;
             map[x] = n;
           }
-          M = M_st.top();
-          M_st.pop();
+          revert_M();
+          M_mst.pop_level();
           if (!proceed) {
             break;
           }
@@ -163,6 +174,8 @@ void forwardchecking_bitset_mrv_degreeprune_ac1_ind(
       bool not_empty = true;
       for (IndexG i=level+1; i<m && not_empty; ++i) {
         auto u = index_order_g[i];
+
+        M_mst.push({u, M[u]});
 
         M[u].reset(y);
         if (g.edge(x, u)) {
@@ -184,46 +197,12 @@ void forwardchecking_bitset_mrv_degreeprune_ac1_ind(
       return not_empty;
     }
 
-    bool ac1() {
-      bool change;
-      do {
-        change = false;
-        for (IndexG i0=level+1; i0<m; ++i0) {
-          auto u0 = index_order_g[i0];
-          for (auto v0=M[u0].find_first(); v0!=boost::dynamic_bitset<>::npos; v0=M[u0].find_next(v0)) {
-            for (IndexG u1=0; u1<m; ++u1) {
-              if (u1 != u0) {
-                bool exists = false;
-                for (auto v1=M[u1].find_first(); v1!=boost::dynamic_bitset<>::npos; v1=M[u1].find_next(v1)) {
-                  if constexpr (is_directed_v<G>) {
-                    if (v0 != v1 &&
-                        (g.edge(u0, u1) == h.edge(v0, v1)) && (!g.edge(u0, u1) || edge_equiv(g, u0, u1, h, v0, v1)) &&
-                        (g.edge(u1, u0) == h.edge(v1, v0)) && (!g.edge(u1, u0) || edge_equiv(g, u1, u0, g, v1, v0))) {
-                      exists = true;
-                      break;
-                    }
-                  } else {
-                    if (v0 != v1 &&
-                        g.edge(u0, u1) == h.edge(v0, v1) && (!g.edge(u0, u1) || edge_equiv(g, u0, u1, h, v0, v1))) {
-                      exists = true;
-                      break;
-                    }
-                  }
-                }
-                if (!exists) {
-                  M[u0].reset(v0);
-                  change = true;
-                  break;
-                }
-              }
-            }
-          }
-          if (!M[u0].any()) {
-            return false;
-          }
-        }
-      } while (change);
-      return true;
+    void revert_M() {
+      while (!M_mst.level_empty()) {
+        auto & [u, row] = M_mst.top();
+        M[u] = row;
+        M_mst.pop();
+      }
     }
   } e(g, h, callback, vertex_equiv, edge_equiv);
 
@@ -232,4 +211,4 @@ void forwardchecking_bitset_mrv_degreeprune_ac1_ind(
 
 }  // namespace sics
 
-#endif  // SICS_FORWARDCHECKING_BITSET_MRV_DEGREEPRUNE_AC1_IND_H_
+#endif  // SICS_FORWARDCHECKING_BITSET_MRV_DEGREESEQUENCCEPRUNE_IND_H_
