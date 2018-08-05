@@ -61,6 +61,8 @@
 #include <sics/forwardchecking_bitset_mrv_degreesequenceprune_ind.h>
 #include <sics/forwardchecking_bitset_mrv_degreesequenceprune_countingalldifferent_ind.h>
 
+#include <sics/lazyforwardchecking_parent_degreesequenceprune_ind.h>
+
 int main(int argc, char * argv[]) {
   using namespace sics;
 
