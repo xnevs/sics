@@ -46,7 +46,7 @@ void lazyforwardchecking_low_bitset_degreesequenceprune_ind(
         typename H::directed_category,
         typename H::vertex_label_type,
         typename H::edge_label_type> h;
-    
+
     Callback callback;
 
     IndexOrderG const & index_order_g;

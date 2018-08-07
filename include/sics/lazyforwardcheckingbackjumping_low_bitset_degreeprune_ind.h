@@ -101,7 +101,7 @@ void lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind(
         }
       }
     }
-    
+
     IndexG backjump_level;
 
     explorer(
