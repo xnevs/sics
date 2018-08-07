@@ -63,6 +63,9 @@
 
 #include <sics/lazyforwardchecking_parent_degreesequenceprune_ind.h>
 
+#include <sics/lazyforwardchecking_low_bitset_degreeprune_ind.h>
+#include <sics/lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind.h>
+
 int main(int argc, char * argv[]) {
   using namespace sics;
 
@@ -79,7 +82,7 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  forwardchecking_bitset_degreesequenceprune_ind(
+  lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind(
       g,
       h,
       [&count]() {++count; return true;},

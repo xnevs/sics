@@ -1,5 +1,5 @@
-#ifndef SICS_LAZYFORWARDCHECKING_MRV_DEGREEPRUNE_IND_H_
-#define SICS_LAZYFORWARDCHECKING_MRV_DEGREEPRUNE_IND_H_
+#ifndef SICS_LAZYFORWARDCHECKING_DEGREESEQUENCEPRUNE_IND_H_
+#define SICS_LAZYFORWARDCHECKING_DEGREESEQUENCEPRUNE_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -17,12 +17,14 @@ template <
     typename G,
     typename H,
     typename Callback,
+    typename IndexOrderG,
     typename VertexEquiv = default_vertex_label_equiv<G, H>,
     typename EdgeEquiv = default_edge_label_equiv<G, H>>
-void lazyforwardchecking_mrv_degreeprune_ind(
+void lazyforwardchecking_degreesequenceprune_ind(
     G const & g,
     H const & h,
     Callback const & callback,
+    IndexOrderG const & index_order_g,
     VertexEquiv const & vertex_equiv = VertexEquiv(),
     EdgeEquiv const & edge_equiv = EdgeEquiv()) {
 
@@ -31,9 +33,20 @@ void lazyforwardchecking_mrv_degreeprune_ind(
 
   struct explorer {
 
-    G const & g;
-    H const & h;
+    adjacency_degreesortedlistmat<
+        IndexG,
+        typename G::directed_category,
+        typename G::vertex_label_type,
+        typename G::edge_label_type> g;
+    adjacency_degreesortedlistmat<
+        IndexH,
+        typename H::directed_category,
+        typename H::vertex_label_type,
+        typename H::edge_label_type> h;
+
     Callback callback;
+
+    IndexOrderG const & index_order_g;
 
     vertex_equiv_helper<VertexEquiv> vertex_equiv;
     edge_equiv_helper<EdgeEquiv> edge_equiv;
@@ -42,13 +55,10 @@ void lazyforwardchecking_mrv_degreeprune_ind(
     IndexH n;
 
     IndexG level;
-    
-    std::vector<IndexG> index_order_g;
 
     std::vector<IndexH> map;
 
     std::vector<char> M;
-    std::vector<IndexH> num_candidates;
     bool M_get(IndexG u, IndexH v) {
       return M[u*n + v];
     }
@@ -62,9 +72,9 @@ void lazyforwardchecking_mrv_degreeprune_ind(
       for (IndexG u=0; u<m; ++u) {
         for (IndexH v=0; v<n; ++v) {
           if (vertex_equiv(g, u, h, v) &&
-              degree_condition(g, u, h, v)) {
+              degree_condition(g, u, h, v) &&
+              degree_sequence_condition(g, u, h, v)) {
             M_set(u, v);
-            ++num_candidates[u];
           }
         }
       }
@@ -75,23 +85,22 @@ void lazyforwardchecking_mrv_degreeprune_ind(
         G const & g,
         H const & h,
         Callback const & callback,
+        IndexOrderG const & index_order_g,
         VertexEquiv const & vertex_equiv,
         EdgeEquiv const & edge_equiv)
         : g{g},
           h{h},
           callback{callback},
+          index_order_g{index_order_g},
           vertex_equiv{vertex_equiv},
           edge_equiv{edge_equiv},
 
           m{g.num_vertices()},
           n{h.num_vertices()},
           level{0},
-          index_order_g(m),
           map(m, n),
           M(m * n, false),
-          num_candidates(m, 0),
           M_sts(m) {
-      std::iota(index_order_g.begin(), index_order_g.end(), 0);
       build_M();
     }
 
@@ -100,13 +109,6 @@ void lazyforwardchecking_mrv_degreeprune_ind(
       if (level == m) {
         return callback();
       } else {
-        auto it = std::min_element(
-            std::next(index_order_g.begin(), level),
-            index_order_g.end(),
-            [this](auto a, auto b) {
-              return num_candidates[a] < num_candidates[b];
-            });
-        std::swap(index_order_g[level], *it);
         auto x = index_order_g[level];
         bool proceed = true;
         for (IndexH y=0; y<n; ++y) {
@@ -134,14 +136,12 @@ void lazyforwardchecking_mrv_degreeprune_ind(
         auto v = map[u];
         if (v == y) {
           M_unset(x, y);
-          --num_candidates[x];
           M_sts[i].emplace(x, y);
           return false;
         }
         auto x_out = g.edge(x, u);
         if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
           M_unset(x, y);
-          --num_candidates[x];
           M_sts[i].emplace(x, y);
           return false;
         }
@@ -149,7 +149,6 @@ void lazyforwardchecking_mrv_degreeprune_ind(
           auto x_in = g.edge(u, x);
           if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
             M_unset(x, y);
-            --num_candidates[x];
             M_sts[i].emplace(x, y);
             return false;
           }
@@ -165,14 +164,13 @@ void lazyforwardchecking_mrv_degreeprune_ind(
         std::tie(u, v) = M_sts[level].top();
         M_sts[level].pop();
         M_set(u, v);
-        ++num_candidates[u];
       }
     }
-  } e(g, h, callback, vertex_equiv, edge_equiv);
+  } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
 
   e.explore();
 }
 
 }  // namespace sics
 
-#endif  // SICS_LAZYFORWARDCHECKING_MRV_DEGREEPRUNE_IND_H_
+#endif  // SICS_LAZYFORWARDCHECKING_DEGREESEQUENCEPRUNE_IND_H_

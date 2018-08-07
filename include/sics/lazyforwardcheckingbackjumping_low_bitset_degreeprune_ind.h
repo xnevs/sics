@@ -1,17 +1,15 @@
-#ifndef SICS_FORWARDCHECKING_BITSET_DEGREESEQUENCEPRUNE_IND_H_
-#define SICS_FORWARDCHECKING_BITSET_DEGREESEQUENCEPRUNE_IND_H_
+#ifndef SICS_LAZYFORWARDCHECKINGBACKJUMPING_LOW_BITSET_DEGREEPRUNE_IND_H_
+#define SICS_LAZYFORWARDCHECKINGBACKJUMPING_LOW_BITSET_DEGREEPRUNE_IND_H_
 
 #include <iterator>
-#include <numeric>
 #include <vector>
+#include <stack>
 
 #include <boost/dynamic_bitset.hpp>
 
-#include "adjacency_degreesortedlistmat.h"
 #include "graph_traits.h"
 #include "label_equivalence.h"
 #include "consistency_utilities.h"
-#include "multi_stack.h"
 
 #include "stats.h"
 
@@ -24,7 +22,7 @@ template <
     typename IndexOrderG,
     typename VertexEquiv = default_vertex_label_equiv<G, H>,
     typename EdgeEquiv = default_edge_label_equiv<G, H>>
-void forwardchecking_bitset_degreesequenceprune_ind(
+void lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind(
     G const & g,
     H const & h,
     Callback const & callback,
@@ -37,20 +35,11 @@ void forwardchecking_bitset_degreesequenceprune_ind(
 
   struct explorer {
 
-    adjacency_degreesortedlistmat<
-        IndexG,
-        typename G::directed_category,
-        typename G::vertex_label_type,
-        typename G::edge_label_type> g;
-    adjacency_degreesortedlistmat<
-        IndexH,
-        typename H::directed_category,
-        typename H::vertex_label_type,
-        typename H::edge_label_type> h;
-
+    G const & g;
+    H const & h;
     Callback callback;
 
-    std::vector<IndexG> index_order_g;
+    IndexOrderG const & index_order_g;
 
     vertex_equiv_helper<VertexEquiv> vertex_equiv;
     edge_equiv_helper<EdgeEquiv> edge_equiv;
@@ -96,19 +85,24 @@ void forwardchecking_bitset_degreesequenceprune_ind(
 
     std::vector<IndexH> map;
 
-    std::vector<boost::dynamic_bitset<>> M;
+    std::vector<IndexG> low;
+    std::vector<boost::dynamic_bitset<>> Ms;
+    boost::dynamic_bitset<> & M_get(IndexG level, IndexG i) {
+      return Ms[(level * (2*m - level + 1)) / 2 + i - level];
+    }
     void build_M() {
-      for (IndexG u=0; u<m; ++u) {
+      for (IndexG i=0; i<m; ++i) {
+        auto u = index_order_g[i];
         for (IndexH v=0; v<n; ++v) {
           if (vertex_equiv(g, u, h, v) &&
-              degree_condition(g, u, h, v) &&
-              degree_sequence_condition(g, u, h, v)) {
-            M[u].set(v);
+              degree_condition(g, u, h, v)) {
+            M_get(0, i).set(v);
           }
         }
       }
     }
-    multi_stack<std::tuple<IndexG, boost::dynamic_bitset<>>> M_mst;
+    
+    IndexG backjump_level;
 
     explorer(
         G const & g,
@@ -130,8 +124,9 @@ void forwardchecking_bitset_degreesequenceprune_ind(
           h_c_bits(n),
           level{0},
           map(m, n),
-          M(m, boost::dynamic_bitset<>(n)),
-          M_mst(m*n, m) {
+          low(m, 0),
+          Ms((m*(m+1))/2, boost::dynamic_bitset<>(n)),
+          backjump_level{m} {
       build_h_bits();
       build_M();
     }
@@ -142,61 +137,55 @@ void forwardchecking_bitset_degreesequenceprune_ind(
         return callback();
       } else {
         auto x = index_order_g[level];
+        backjump_level = lazy_forward_check();
         bool proceed = true;
-        for (auto y=M[x].find_first(); y!=boost::dynamic_bitset<>::npos; y=M[x].find_next(y)) {
-          M_mst.push_level();
-          if (forward_check(y)) {
+        if (backjump_level > level) {
+          for (auto y=M_get(level, level).find_first(); y!=boost::dynamic_bitset<>::npos; y=M_get(level, level).find_next(y)) {
+            for (IndexG i=level+1; i<m && level<low[i]; ++i) {
+              low[i] = level;
+            }
             map[x] = y;
             ++level;
             proceed = explore();
             --level;
             map[x] = n;
-          }
-          revert_M();
-          M_mst.pop_level();
-          if (!proceed) {
-            break;
+            if (!proceed || backjump_level <= level) {
+              break;
+            }
           }
         }
+        low[level] = level;
         return proceed;
       }
     }
 
-    bool forward_check(IndexH y) {
+    IndexG lazy_forward_check() {
       auto x = index_order_g[level];
-
-      bool not_empty = true;
-      for (IndexG i=level+1; i<m && not_empty; ++i) {
+      if (!M_get(low[level], level).any()) {
+        return low[level];
+      }
+      for (IndexG i=low[level]; i<level; ++i) {
         auto u = index_order_g[i];
-
-        M_mst.push({u, M[u]});
-
-        M[u].reset(y);
-        if (g.edge(x, u)) {
-          M[u] &= std::get<0>(h_bits[y]);
+        auto v = map[u];
+        M_get(i+1, level) = M_get(i, level);
+        M_get(i+1, level).reset(v);
+        if (g.edge(u, x)) {
+          M_get(i+1, level) &= std::get<0>(h_bits[v]);
         } else {
-          M[u] &= std::get<0>(h_c_bits[y]);
+          M_get(i+1, level) &= std::get<0>(h_c_bits[v]);
         }
-
         if constexpr (is_directed_v<G>) {
-          if (g.edge(u, x)) {
-            M[u] &= std::get<1>(h_bits[y]);
+          if (g.edge(x, u)) {
+            M_get(i+1, level) &= std::get<1>(h_bits[v]);
           } else {
-            M[u] &= std::get<1>(h_c_bits[y]);
+            M_get(i+1, level) &= std::get<1>(h_c_bits[v]);
           }
         }
-
-        not_empty = M[u].any();
+        if (!M_get(i+1, level).any()) {
+          return i+1;
+        }
       }
-      return not_empty;
-    }
-
-    void revert_M() {
-      while (!M_mst.level_empty()) {
-        auto & [u, row] = M_mst.top();
-        M[u] = row;
-        M_mst.pop();
-      }
+      return level+1;
     }
   } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
 
@@ -205,4 +194,4 @@ void forwardchecking_bitset_degreesequenceprune_ind(
 
 }  // namespace sics
 
-#endif  // SICS_FORWARDCHECKING_BITSET_DEGREESEQUENCEPRUNE_IND_H_
+#endif  // SICS_LAZYFORWARDCHECKINGBACKJUMPING_LOW_BITSET_DEGREEPRUNE_IND_H_
