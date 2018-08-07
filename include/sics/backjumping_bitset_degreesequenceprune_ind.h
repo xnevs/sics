@@ -1,5 +1,5 @@
-#ifndef SICS_LAZYFORWARDCHECKINGBACKJUMPING_LOW_BITSET_DEGREESEQUENCEPRUNE_IND_H_
-#define SICS_LAZYFORWARDCHECKINGBACKJUMPING_LOW_BITSET_DEGREESEQUENCEPRUNE_IND_H_
+#ifndef SICS_BACKJUMPING_BITSET_DEGREESEQUENCEPRUNE_IND_H_
+#define SICS_BACKJUMPING_BITSET_DEGREESEQUENCEPRUNE_IND_H_
 
 #include <iterator>
 #include <vector>
@@ -23,7 +23,7 @@ template <
     typename IndexOrderG,
     typename VertexEquiv = default_vertex_label_equiv<G, H>,
     typename EdgeEquiv = default_edge_label_equiv<G, H>>
-void lazyforwardcheckingbackjumping_low_bitset_degreesequenceprune_ind(
+void backjumping_bitset_degreesequenceprune_ind(
     G const & g,
     H const & h,
     Callback const & callback,
@@ -95,23 +95,20 @@ void lazyforwardcheckingbackjumping_low_bitset_degreesequenceprune_ind(
 
     std::vector<IndexH> map;
 
-    std::vector<IndexG> low;
-    std::vector<boost::dynamic_bitset<>> Ms;
-    boost::dynamic_bitset<> & M_get(IndexG level, IndexG i) {
-      return Ms[(level * (2*m - level + 1)) / 2 + i - level];
-    }
-    void build_M() {
+    std::vector<boost::dynamic_bitset<>> M_base;
+    void build_M_base() {
       for (IndexG i=0; i<m; ++i) {
         auto u = index_order_g[i];
         for (IndexH v=0; v<n; ++v) {
           if (vertex_equiv(g, u, h, v) &&
               degree_condition(g, u, h, v) &&
               degree_sequence_condition(g, u, h, v)) {
-            M_get(0, i).set(v);
+            M_base[i].set(v);
           }
         }
       }
     }
+    std::vector<boost::dynamic_bitset<>> M;
 
     IndexG backjump_level;
 
@@ -135,11 +132,11 @@ void lazyforwardcheckingbackjumping_low_bitset_degreesequenceprune_ind(
           h_c_bits(n),
           level{0},
           map(m, n),
-          low(m, 0),
-          Ms((m*(m+1))/2, boost::dynamic_bitset<>(n)),
+          M_base(m, boost::dynamic_bitset<>(n)),
+          M(m, boost::dynamic_bitset<>(n)),
           backjump_level{m} {
       build_h_bits();
-      build_M();
+      build_M_base();
     }
 
     bool explore() {
@@ -148,13 +145,10 @@ void lazyforwardcheckingbackjumping_low_bitset_degreesequenceprune_ind(
         return callback();
       } else {
         auto x = index_order_g[level];
-        backjump_level = lazy_forward_check();
+        backjump_level = back_check();
         bool proceed = true;
         if (backjump_level >= level) {
-          for (auto y=M_get(level, level).find_first(); y!=boost::dynamic_bitset<>::npos; y=M_get(level, level).find_next(y)) {
-            for (IndexG i=level+1; i<m && level<low[i]; ++i) {
-              low[i] = level;
-            }
+          for (auto y=M[level].find_first(); y!=boost::dynamic_bitset<>::npos; y=M[level].find_next(y)) {
             map[x] = y;
             ++level;
             proceed = explore();
@@ -165,29 +159,30 @@ void lazyforwardcheckingbackjumping_low_bitset_degreesequenceprune_ind(
             }
           }
         }
-        low[level] = level;
         return proceed;
       }
     }
 
-    IndexG lazy_forward_check() {
+    IndexG back_check() {
       auto x = index_order_g[level];
+
+      M[level] = M_base[level];
+
       IndexG i;
-      for (i=low[level]; i<level && M_get(i, level).any(); ++i) {
+      for (i=0; i<level && M[level].any(); ++i) {
         auto u = index_order_g[i];
         auto v = map[u];
-        M_get(i+1, level) = M_get(i, level);
-        M_get(i+1, level).reset(v);
+        M[level].reset(v);
         if (g.edge(u, x)) {
-          M_get(i+1, level) &= std::get<0>(h_bits[v]);
+          M[level] &= std::get<0>(h_bits[v]);
         } else {
-          M_get(i+1, level) &= std::get<0>(h_c_bits[v]);
+          M[level] &= std::get<0>(h_c_bits[v]);
         }
         if constexpr (is_directed_v<G>) {
           if (g.edge(x, u)) {
-            M_get(i+1, level) &= std::get<1>(h_bits[v]);
+            M[level] &= std::get<1>(h_bits[v]);
           } else {
-            M_get(i+1, level) &= std::get<1>(h_c_bits[v]);
+            M[level] &= std::get<1>(h_c_bits[v]);
           }
         }
       }
@@ -200,4 +195,4 @@ void lazyforwardcheckingbackjumping_low_bitset_degreesequenceprune_ind(
 
 }  // namespace sics
 
-#endif  // SICS_LAZYFORWARDCHECKINGBACKJUMPING_LOW_BITSET_DEGREESEQUENCEPRUNE_IND_H_
+#endif  // SICS_BACKJUMPING_BITSET_DEGREESEQUENCEPRUNE_IND_H_

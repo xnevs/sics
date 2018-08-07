@@ -139,7 +139,7 @@ void lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind(
         auto x = index_order_g[level];
         backjump_level = lazy_forward_check();
         bool proceed = true;
-        if (backjump_level > level) {
+        if (backjump_level >= level) {
           for (auto y=M_get(level, level).find_first(); y!=boost::dynamic_bitset<>::npos; y=M_get(level, level).find_next(y)) {
             for (IndexG i=level+1; i<m && level<low[i]; ++i) {
               low[i] = level;
@@ -161,10 +161,8 @@ void lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind(
 
     IndexG lazy_forward_check() {
       auto x = index_order_g[level];
-      if (!M_get(low[level], level).any()) {
-        return low[level];
-      }
-      for (IndexG i=low[level]; i<level; ++i) {
+      IndexG i;
+      for (i=low[level]; i<level && M_get(i, level).any(); ++i) {
         auto u = index_order_g[i];
         auto v = map[u];
         M_get(i+1, level) = M_get(i, level);
@@ -181,11 +179,8 @@ void lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind(
             M_get(i+1, level) &= std::get<1>(h_c_bits[v]);
           }
         }
-        if (!M_get(i+1, level).any()) {
-          return i+1;
-        }
       }
-      return level+1;
+      return i;
     }
   } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
 

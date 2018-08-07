@@ -54,7 +54,6 @@
 #include <sics/forwardchecking_bitset_degreeprune_ind.h>
 #include <sics/forwardchecking_bitset_degreesequenceprune_ind.h>
 
-#include <sics/lazyforwardchecking_mrv_ind.h>
 #include <sics/forwardchecking_bitset_mrv_degreeprune_ind.h>
 #include <sics/forwardchecking_bitset_mrv_degreeprune_ac1_ind.h>
 #include <sics/forwardchecking_bitset_mrv_degreeprune_countingalldifferent_ind.h>
@@ -65,6 +64,8 @@
 
 #include <sics/lazyforwardchecking_low_bitset_degreeprune_ind.h>
 #include <sics/lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind.h>
+
+#include <sics/backtracking_bitset_degreeprune_ind.h>
 
 int main(int argc, char * argv[]) {
   using namespace sics;
@@ -82,7 +83,7 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind(
+  lazyforwardchecking_low_bitset_degreeprune_ind(
       g,
       h,
       [&count]() {++count; return true;},
