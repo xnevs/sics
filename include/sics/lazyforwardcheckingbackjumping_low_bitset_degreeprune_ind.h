@@ -134,6 +134,7 @@ void lazyforwardcheckingbackjumping_low_bitset_degreeprune_ind(
     bool explore() {
       SICS_STATS_STATE;
       if (level == m) {
+        backjump_level = m;
         return callback();
       } else {
         auto x = index_order_g[level];

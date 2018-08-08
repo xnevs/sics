@@ -1,9 +1,8 @@
-#ifndef SICS_BACKJUMPING_BITSET_DEGREESEQUENCEPRUNE_IND_H_
-#define SICS_BACKJUMPING_BITSET_DEGREESEQUENCEPRUNE_IND_H_
+#ifndef SICS_CONFLICTBACKJUMPING_DEGREESEQUENCEPRUNE_IND_H_
+#define SICS_CONFLICTBACKJUMPING_DEGREESEQUENCEPRUNE_IND_H_
 
 #include <iterator>
 #include <vector>
-#include <stack>
 
 #include <boost/dynamic_bitset.hpp>
 
@@ -23,7 +22,7 @@ template <
     typename IndexOrderG,
     typename VertexEquiv = default_vertex_label_equiv<G, H>,
     typename EdgeEquiv = default_edge_label_equiv<G, H>>
-void backjumping_bitset_degreesequenceprune_ind(
+void conflictbackjumping_degreesequenceprune_ind(
     G const & g,
     H const & h,
     Callback const & callback,
@@ -47,6 +46,7 @@ void backjumping_bitset_degreesequenceprune_ind(
         typename H::vertex_label_type,
         typename H::edge_label_type> h;
 
+
     Callback callback;
 
     IndexOrderG const & index_order_g;
@@ -57,60 +57,12 @@ void backjumping_bitset_degreesequenceprune_ind(
     IndexG m;
     IndexH n;
 
-    using bits_type = std::conditional_t<
-        is_directed_v<H>,
-        std::tuple<boost::dynamic_bitset<>, boost::dynamic_bitset<>>,
-        std::tuple<boost::dynamic_bitset<>>>;
-
-    std::vector<bits_type> h_bits;
-    std::vector<bits_type> h_c_bits;
-    void build_h_bits() {
-      for (IndexH i=0; i<n; ++i) {
-        std::get<0>(h_bits[i]).resize(n);
-        std::get<0>(h_c_bits[i]).resize(n);
-        if constexpr (is_directed_v<H>) {
-          std::get<1>(h_bits[i]).resize(n);
-          std::get<1>(h_c_bits[i]).resize(n);
-        }
-      }
-
-      for (IndexH i=0; i<n; ++i) {
-        for (IndexH j=0; j<n; ++j) {
-          if (h.edge(i, j)) {
-            std::get<0>(h_bits[i]).set(j);
-            if constexpr (is_directed_v<H>) {
-              std::get<1>(h_bits[j]).set(i);
-            }
-          } else {
-            std::get<0>(h_c_bits[i]).set(j);
-            if constexpr (is_directed_v<H>) {
-              std::get<1>(h_c_bits[j]).set(i);
-            }
-          }
-        }
-      }
-    }
-
     IndexG level;
 
     std::vector<IndexH> map;
 
-    std::vector<boost::dynamic_bitset<>> M_base;
-    void build_M_base() {
-      for (IndexG i=0; i<m; ++i) {
-        auto u = index_order_g[i];
-        for (IndexH v=0; v<n; ++v) {
-          if (vertex_equiv(g, u, h, v) &&
-              degree_condition(g, u, h, v) &&
-              degree_sequence_condition(g, u, h, v)) {
-            M_base[i].set(v);
-          }
-        }
-      }
-    }
-    std::vector<boost::dynamic_bitset<>> M;
-
     IndexG backjump_level;
+    std::vector<boost::dynamic_bitset<>> conflicts;
 
     explorer(
         G const & g,
@@ -128,66 +80,78 @@ void backjumping_bitset_degreesequenceprune_ind(
 
           m{g.num_vertices()},
           n{h.num_vertices()},
-          h_bits(n),
-          h_c_bits(n),
           level{0},
           map(m, n),
-          M_base(m, boost::dynamic_bitset<>(n)),
-          M(m, boost::dynamic_bitset<>(n)),
-          backjump_level{m} {
-      build_h_bits();
-      build_M_base();
+          backjump_level{m},
+          conflicts(m, boost::dynamic_bitset<>(m)) {
     }
 
     bool explore() {
       SICS_STATS_STATE;
       if (level == m) {
         backjump_level = m;
+        conflicts[m-1].set();
         return callback();
       } else {
         auto x = index_order_g[level];
-        backjump_level = back_check();
+        conflicts[level].reset();
+        backjump_level = level+1;
         bool proceed = true;
-        if (backjump_level >= level) {
-          for (auto y=M[level].find_first(); y!=boost::dynamic_bitset<>::npos; y=M[level].find_next(y)) {
+        for (IndexH y=0; y<n; ++y) {
+          if (consistency(y)) {
             map[x] = y;
             ++level;
             proceed = explore();
             --level;
             map[x] = n;
             if (!proceed || backjump_level <= level) {
-              break;
+              return proceed;
             }
           }
+        }
+        auto pos = conflicts[level].find_next(m-1-level);
+        if (pos != boost::dynamic_bitset<>::npos) {
+          backjump_level = m - pos;
+        } else {
+          backjump_level = 0;
+        }
+
+        if (backjump_level > 0) {
+          conflicts[backjump_level-1] |= conflicts[level];
         }
         return proceed;
       }
     }
 
-    IndexG back_check() {
+    bool consistency(IndexH y) {
       auto x = index_order_g[level];
 
-      M[level] = M_base[level];
+      if (!vertex_equiv(g, x, h, y) ||
+          !degree_condition(g, x, h, y)) {
+        return false;
+      }
 
-      IndexG i;
-      for (i=0; i<level && M[level].any(); ++i) {
+      for (IndexG i=0; i<level; ++i) {
         auto u = index_order_g[i];
         auto v = map[u];
-        M[level].reset(v);
-        if (g.edge(u, x)) {
-          M[level] &= std::get<0>(h_bits[v]);
-        } else {
-          M[level] &= std::get<0>(h_c_bits[v]);
+        if (v == y) {
+          conflicts[level].set(m-1-i);
+          return false;
+        }
+        auto x_out = g.edge(x, u);
+        if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
+          conflicts[level].set(m-1-i);
+          return false;
         }
         if constexpr (is_directed_v<G>) {
-          if (g.edge(x, u)) {
-            M[level] &= std::get<1>(h_bits[v]);
-          } else {
-            M[level] &= std::get<1>(h_c_bits[v]);
+          auto x_in = g.edge(u, x);
+          if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
+            conflicts[level].set(m-1-i);
+            return false;
           }
         }
       }
-      return i;
+      return true;
     }
   } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
 
@@ -196,4 +160,4 @@ void backjumping_bitset_degreesequenceprune_ind(
 
 }  // namespace sics
 
-#endif  // SICS_BACKJUMPING_BITSET_DEGREESEQUENCEPRUNE_IND_H_
+#endif  // SICS_CONFLICTBACKJUMPING_DEGREESEQUENCEPRUNE_IND_H_

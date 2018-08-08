@@ -1,9 +1,8 @@
-#ifndef SICS_LAZYFORWARDCHECKING_DEGREESEQUENCEPRUNE_IND_H_
-#define SICS_LAZYFORWARDCHECKING_DEGREESEQUENCEPRUNE_IND_H_
+#ifndef SICS_BACKJUMPING_DEGREESEQUENCEPRUNE_IND_H_
+#define SICS_BACKJUMPING_DEGREESEQUENCEPRUNE_IND_H_
 
 #include <iterator>
 #include <vector>
-#include <stack>
 
 #include "adjacency_degreesortedlistmat.h"
 #include "graph_traits.h"
@@ -21,7 +20,7 @@ template <
     typename IndexOrderG,
     typename VertexEquiv = default_vertex_label_equiv<G, H>,
     typename EdgeEquiv = default_edge_label_equiv<G, H>>
-void lazyforwardchecking_degreesequenceprune_ind(
+void backjumping_degreesequenceprune_ind(
     G const & g,
     H const & h,
     Callback const & callback,
@@ -52,35 +51,15 @@ void lazyforwardchecking_degreesequenceprune_ind(
     vertex_equiv_helper<VertexEquiv> vertex_equiv;
     edge_equiv_helper<EdgeEquiv> edge_equiv;
 
+
     IndexG m;
     IndexH n;
 
-    IndexG level;
+    using x_it_type = typename IndexOrderG::const_iterator;
+    x_it_type x_it;
+    x_it_type backjump_it;
 
     std::vector<IndexH> map;
-
-    std::vector<char> M;
-    bool M_get(IndexG u, IndexH v) {
-      return M[u*n + v];
-    }
-    void M_set(IndexG u, IndexH v) {
-      M[u*n + v] = true;
-    }
-    void M_unset(IndexG u, IndexH v) {
-      M[u*n + v] = false;
-    }
-    void build_M() {
-      for (IndexG u=0; u<m; ++u) {
-        for (IndexH v=0; v<n; ++v) {
-          if (vertex_equiv(g, u, h, v) &&
-              degree_condition(g, u, h, v) &&
-              degree_sequence_condition(g, u, h, v)) {
-            M_set(u, v);
-          }
-        }
-      }
-    }
-    std::vector<std::stack<std::pair<IndexG,IndexH>>> M_sts;
 
     explorer(
         G const & g,
@@ -98,74 +77,70 @@ void lazyforwardchecking_degreesequenceprune_ind(
 
           m{g.num_vertices()},
           n{h.num_vertices()},
-          level{0},
-          map(m, n),
-          M(m * n, false),
-          M_sts(m) {
-      build_M();
+          x_it(std::cbegin(index_order_g)),
+          backjump_it{x_it},
+          map(m, n) {
     }
 
     bool explore() {
       SICS_STATS_STATE;
-      if (level == m) {
+      if (x_it == std::cend(index_order_g)) {
         return callback();
       } else {
-        auto x = index_order_g[level];
+        auto x = *x_it;
         bool proceed = true;
+        backjump_it = std::next(x_it);
+        x_it_type latest_it = std::cbegin(index_order_g);
         for (IndexH y=0; y<n; ++y) {
-          if (M_get(x, y) &&
-              consistency(y)) {
+          x_it_type culprit_it = consistency(y);
+          if (culprit_it > x_it) {
             map[x] = y;
-            ++level;
+            ++x_it;
             proceed = explore();
-            --level;
+            --x_it;
             map[x] = n;
-            revert_M();
-            if (!proceed) {
+            if (!proceed || backjump_it <= x_it) {
               break;
             }
           }
+          if (culprit_it > latest_it) {
+            latest_it = culprit_it;
+          }
+        }
+        if (backjump_it > x_it && latest_it <= x_it) {
+          backjump_it = latest_it;
         }
         return proceed;
       }
     }
 
-    bool consistency(IndexH y) {
-      auto x = index_order_g[level];
-      for (IndexG i=0; i<level; ++i) {
-        auto u = index_order_g[i];
+    x_it_type consistency(IndexH y) {
+      auto x = *x_it;
+
+      if (!vertex_equiv(g, x, h, y) ||
+          !degree_condition(g, x, h, y)) {
+        return std::cbegin(index_order_g);
+      }
+
+      x_it_type it;
+      for (it=std::cbegin(index_order_g); it!=x_it; ++it) {
+        auto u = *it;
         auto v = map[u];
         if (v == y) {
-          M_unset(x, y);
-          M_sts[i].emplace(x, y);
-          return false;
+          break;
         }
         auto x_out = g.edge(x, u);
         if (x_out != h.edge(y, v) || (x_out && !edge_equiv(g, x, u, h, y, v))) {
-          M_unset(x, y);
-          M_sts[i].emplace(x, y);
-          return false;
+          break;
         }
         if constexpr (is_directed_v<G>) {
           auto x_in = g.edge(u, x);
           if (x_in != h.edge(v, y) || (x_in && !edge_equiv(g, u, x, h, v, y))) {
-            M_unset(x, y);
-            M_sts[i].emplace(x, y);
-            return false;
+            break;
           }
         }
       }
-      return true;
-    }
-
-    void revert_M() {
-      while (!M_sts[level].empty()) {
-        IndexG u;
-        IndexH v;
-        std::tie(u, v) = M_sts[level].top();
-        M_sts[level].pop();
-        M_set(u, v);
-      }
+      return std::next(it);
     }
   } e(g, h, callback, index_order_g, vertex_equiv, edge_equiv);
 
@@ -174,4 +149,4 @@ void lazyforwardchecking_degreesequenceprune_ind(
 
 }  // namespace sics
 
-#endif  // SICS_LAZYFORWARDCHECKING_DEGREESEQUENCEPRUNE_IND_H_
+#endif  // SICS_BACKJUMPING_DEGREESEQUENCEPRUNE_IND_H_

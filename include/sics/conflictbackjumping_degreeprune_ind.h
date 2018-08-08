@@ -149,4 +149,4 @@ void conflictbackjumping_degreeprune_ind(
 
 }  // namespace sics
 
-#endif  // SICS_CONFLICTBACKJUMPING_DEGREEPRUE_IND_H_
+#endif  // SICS_CONFLICTBACKJUMPING_DEGREEPRUNE_IND_H_
