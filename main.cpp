@@ -34,6 +34,7 @@
 #include <sics/backtracking_parent_adjacentconsistency_precount_ind.h>
 #include <sics/backtracking_parent_degreeprune_adjacentconsistency_precount_ind.h>
 #include <sics/backjumping_ind.h>
+#include <sics/backjumping_degreeprune_ind.h>
 #include <sics/conflictbackjumping_ind.h>
 #include <sics/conflictbackjumping_degreeprune_ind.h>
 #include <sics/backmarking_ind.h>
@@ -83,7 +84,7 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  lazyforwardchecking_low_bitset_degreeprune_ind(
+  backjumping_degreeprune_ind(
       g,
       h,
       [&count]() {++count; return true;},
