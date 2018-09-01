@@ -7,6 +7,7 @@
 
 #include <boost/dynamic_bitset.hpp>
 
+#include "adjacency_degreesortedlistmat.h"
 #include "graph_traits.h"
 #include "label_equivalence.h"
 #include "consistency_utilities.h"
@@ -36,8 +37,17 @@ void forwardchecking_bitset_degreesequenceprune_countingalldifferent_ind(
 
   struct explorer {
 
-    G const & g;
-    H const & h;
+    adjacency_degreesortedlistmat<
+        IndexG,
+        typename G::directed_category,
+        typename G::vertex_label_type,
+        typename G::edge_label_type> g;
+    adjacency_degreesortedlistmat<
+        IndexH,
+        typename H::directed_category,
+        typename H::vertex_label_type,
+        typename H::edge_label_type> h;
+
     Callback callback;
 
     std::vector<IndexG> index_order_g;
@@ -140,7 +150,7 @@ void forwardchecking_bitset_degreesequenceprune_countingalldifferent_ind(
         return callback();
       } else {
         auto x = index_order_g[level];
-        std::copy(std::next(index_order_g.begin(), level), index_order_g.end(), temp_index_order_g.begin());
+        std::copy(std::next(index_order_g.begin(), level), index_order_g.end(), std::next(temp_index_order_g.begin(), level));
         bool proceed = true;
         for (auto y=M[x].find_first(); y!=boost::dynamic_bitset<>::npos; y=M[x].find_next(y)) {
           M_mst.push_level();

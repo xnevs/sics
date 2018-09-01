@@ -139,7 +139,7 @@ void forwardchecking_bitset_degreeprune_countingalldifferent_ind(
         return callback();
       } else {
         auto x = index_order_g[level];
-        std::copy(std::next(index_order_g.begin(), level), index_order_g.end(), temp_index_order_g.begin());
+        std::copy(std::next(index_order_g.begin(), level), index_order_g.end(), std::next(temp_index_order_g.begin(), level));
         bool proceed = true;
         for (auto y=M[x].find_first(); y!=boost::dynamic_bitset<>::npos; y=M[x].find_next(y)) {
           M_mst.push_level();

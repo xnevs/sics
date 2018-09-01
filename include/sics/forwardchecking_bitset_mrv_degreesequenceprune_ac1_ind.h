@@ -9,6 +9,7 @@
 
 #include <boost/dynamic_bitset.hpp>
 
+#include "adjacency_degreesortedlistmat.h"
 #include "graph_traits.h"
 #include "label_equivalence.h"
 #include "consistency_utilities.h"
@@ -35,8 +36,17 @@ void forwardchecking_bitset_mrv_degreesequenceprune_ac1_ind(
 
   struct explorer {
 
-    G const & g;
-    H const & h;
+    adjacency_degreesortedlistmat<
+        IndexG,
+        typename G::directed_category,
+        typename G::vertex_label_type,
+        typename G::edge_label_type> g;
+    adjacency_degreesortedlistmat<
+        IndexH,
+        typename H::directed_category,
+        typename H::vertex_label_type,
+        typename H::edge_label_type> h;
+
     Callback callback;
 
     vertex_equiv_helper<VertexEquiv> vertex_equiv;
