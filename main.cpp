@@ -47,8 +47,10 @@
 #include <sics/forwardchecking_degreesequenceprune_ind.h>
 #include <sics/lazyforwardchecking_ind.h>
 #include <sics/lazyforwardchecking_degreeprune_ind.h>
+#include <sics/lazyforwardchecking_degreesequenceprune_ind.h>
 #include <sics/lazyforwardchecking_low_ind.h>
 #include <sics/lazyforwardchecking_low_degreeprune_ind.h>
+#include <sics/lazyforwardchecking_low_degreesequenceprune_ind.h>
 #include <sics/lazyforwardchecking_parent_ind.h>
 #include <sics/lazyforwardchecking_parent_degreeprune_ind.h>
 #include <sics/lazyforwardchecking_low_parent_ind.h>
@@ -94,7 +96,7 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  forwardchecking_degreesequenceprune_ind(
+  lazyforwardchecking_low_degreesequenceprune_ind(
       g,
       h,
       [&count]() {++count; return true;},

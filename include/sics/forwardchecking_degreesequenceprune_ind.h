@@ -4,6 +4,7 @@
 #include <iterator>
 #include <vector>
 
+#include "adjacency_degreesortedlistmat.h"
 #include "graph_traits.h"
 #include "label_equivalence.h"
 #include "multi_stack.h"
@@ -32,8 +33,17 @@ void forwardchecking_degreesequenceprune_ind(
 
   struct explorer {
 
-    G const & g;
-    H const & h;
+    adjacency_degreesortedlistmat<
+        IndexG,
+        typename G::directed_category,
+        typename G::vertex_label_type,
+        typename G::edge_label_type> g;
+    adjacency_degreesortedlistmat<
+        IndexH,
+        typename H::directed_category,
+        typename H::vertex_label_type,
+        typename H::edge_label_type> h;
+
     Callback callback;
 
     IndexOrderG const & index_order_g;
