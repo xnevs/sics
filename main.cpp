@@ -17,6 +17,7 @@
 
 #include <sics/backtracking_ind.h>
 #include <sics/backtracking_degreeprune_ind.h>
+#include <sics/backtracking_degreesequenceprune_ind.h>
 #include <sics/backtracking_adjacentconsistency_ind.h>
 #include <sics/backtracking_degreeprune_adjacentconsistency_ind.h>
 #include <sics/backtracking_adjacentconsistency_forwardcount_ind.h>
@@ -43,6 +44,7 @@
 #include <sics/backmarking_degreeprune_ind.h>
 #include <sics/forwardchecking_ind.h>
 #include <sics/forwardchecking_degreeprune_ind.h>
+#include <sics/forwardchecking_degreesequenceprune_ind.h>
 #include <sics/lazyforwardchecking_ind.h>
 #include <sics/lazyforwardchecking_degreeprune_ind.h>
 #include <sics/lazyforwardchecking_low_ind.h>
@@ -92,10 +94,11 @@ int main(int argc, char * argv[]) {
   auto index_order_g = vertex_order_GreatestConstraintFirst(g);
 
   int count = 0;
-  forwardchecking_bitset_mrv_degreesequenceprune_ac1_ind(
+  forwardchecking_degreesequenceprune_ind(
       g,
       h,
-      [&count]() {++count; return true;});
+      [&count]() {++count; return true;},
+      index_order_g);
 
   std::cout << count << std::endl;
 
