@@ -1,1 +1,1 @@
-This repository has been moved to https://git.sr.ht/%7Exnevs/sics.
+This repository has been moved to https://git.sr.ht/~xnevs/sics.
